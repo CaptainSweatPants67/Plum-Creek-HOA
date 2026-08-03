@@ -1,0 +1,4 @@
+Date	Time	Event	Location	Details
+2026-10-09	6:30 PM	Annual Meeting	Gardner Senior Center	
+# Add one future event per line using this format:
+# 2026-09-15	7:00 PM	Annual HOA Meeting	Community room	Agenda details

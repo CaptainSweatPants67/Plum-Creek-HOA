@@ -1,0 +1,102 @@
+Tax Year	Officer Name	Position
+		
+		
+2008	Jerry Kenney	Interim
+2008	John Shepherd	Interim
+2008	Darrell Prock	Interim
+2008	Dennis Howard	Interim
+		
+2008	Jerry Kenney	President
+2008	Darrell Prock	Director
+2008	John Shepherd	Secretary
+2008	Mike Shell	Treasurer
+		
+2009	Jerry Kenney	President
+2009	Mike Shell	Treasurer
+2009	Diana Geczewski	Secretary
+2009	Charles Valenta	Member
+2009	Jack Roan	Member
+		
+2010	Jerry Kenney	President
+2010	Scott Whitson	Vice President
+2010	Lori Whitson	Secretary
+2010	William Payne	Treasurer
+2010	Charles Valenta	Member
+		
+2011	Jerry Kenney	President
+2011	Scott Whitson	Vice President
+2011	Lori Whitson	Secretary
+2011	William Payne	Treasurer
+2011	Mike Shell	Vice President
+		
+2012	Jerry Kenney	President
+2012	Scott Whitson	Vice President
+2012	Lori Whitson	Secretary
+2012	William Payne	Treasurer
+2012	Russell Herron	Vice President
+		
+2013	Jerry Kenney	President
+2013	Scott Whitson	Vice President
+2013	Lori Whitson	Secretary
+2013	William Payne	Treasurer
+2013	Russell Herron	Vice President
+		
+2014	Jerry Kenney	President
+2014	Tom Neddersen	Vice President
+2014	Lori Whitson	Secretary
+2014	William Payne	Treasurer
+2014	Russell Herron	Vice President
+		
+2015	Jerry Kenney	President
+2015	Tom Neddersen	Vice President
+2015	Lori Whitson	Secretary
+2015	William Payne	Treasurer
+		
+2016	Jerry Kenney	President
+2016	Tom Neddersen	Vice President
+2016	Lori Whitson	Secretary
+2016	William Payne	Treasurer
+		
+2017	Jerry Kenney	President
+2017	Tom Neddersen	Vice President
+2017	Lori Whitson	Secretary
+2017	William Payne	Treasurer
+		
+2018	Jerry Kenney	President
+2018	Tom Neddersen	Vice President
+2018	Lori Whitson	Secretary
+2018	William Payne	Treasurer
+		
+2019	Jerry Kenney	President
+2019	Tom Neddersen	Vice President
+2019	Lori Whitson	Secretary
+2019	William Payne	Treasurer
+2019	Megan Darling	Vice President
+		
+2020	Megan Darling	President
+2020	Tom Neddersen	Vice President
+2020	Lori Whitson	Secretary
+2020	Emily Redding	Treasurer
+2020	Trina Sidwell	Vice President
+		
+2021	Megan Darling	President
+2021	Tom Neddersen	Vice President
+2021	Trina Sidwell	Vice President
+2021	Lori Whitson	Secretary
+2021	Emily Redding	Treasurer
+		
+2022	Megan Darling	President
+2022	Trina Sidwell	Vice President
+2022	Emily Redding	Treasurer
+		
+2023	Megan Darling	President
+2023	Trina Sidwell	Vice President
+2023	Nathaniel Thurston	Treasurer
+		
+2024	Laura McKinney	President
+2024	Nathaniel Thurston	Treasurer
+		
+2025	Laura McKinney	President
+2025	Michael Bruna	Vice President
+2025	Lori Whitson	Secretary
+2025	Charity Coker	Treasurer
