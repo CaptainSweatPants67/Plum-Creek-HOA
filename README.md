@@ -31,7 +31,7 @@ When replacing a PDF, keep its public filename the same so existing links contin
 
 Board records use tab-separated columns for year, officer name, and position. The website automatically treats the latest year in `Info/Board.txt` as the current roster.
 
-Add future events to `Info/Events.txt`, one event per line, using tab-separated columns in this order: `YYYY-MM-DD`, time, event name, location, and details. Past dates are automatically omitted from the Events page.
+Add future events to `Info/Events.txt`, one event per line, using tab-separated columns in this order: `YYYY-MM-DD`, time, event name, location, street address, and details. Past dates are automatically omitted from the Events page. When an event includes a street address, the page automatically displays a map preview and a Google Maps link.
 
 ## Cloudflare deployment from GitHub
 

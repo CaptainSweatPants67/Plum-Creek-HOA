@@ -766,6 +766,58 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.event-address {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  margin-top: 24px;
+  overflow: hidden;
+}
+
+.event-address-heading {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.event-address-heading span:first-child {
+  color: var(--terracotta);
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.event-address-heading address {
+  color: var(--ink);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.event-address-heading a {
+  border-bottom: 1px solid var(--forest);
+  color: var(--forest);
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  padding-bottom: 3px;
+}
+
+.event-address-heading a:hover {
+  color: var(--terracotta);
+}
+
+.event-map {
+  border: 0;
+  display: block;
+  height: 320px;
+  width: 100%;
+}
+
 .empty-state {
   background: var(--cream);
   border: 1px solid var(--line);
@@ -1055,6 +1107,16 @@ a:focus-visible {
   .event-card {
     gap: 12px;
     grid-template-columns: 1fr;
+  }
+
+  .event-address-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .event-map {
+    height: 260px;
   }
 }
 

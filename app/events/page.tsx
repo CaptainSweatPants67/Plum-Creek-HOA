@@ -7,6 +7,7 @@ type CommunityEvent = {
   time: string;
   title: string;
   location: string;
+  address: string;
   details: string;
 };
 
@@ -28,11 +29,12 @@ function getUpcomingEvents(): CommunityEvent[] {
     .filter((line) => line.trim() && !line.trim().startsWith("#"))
     .map((line) => line.split("\t").map((value) => value.trim()))
     .filter(([date, , title]) => date && title && date >= today)
-    .map(([date, time, title, location, details]) => ({
+    .map(([date, time, title, location, address, details]) => ({
       date,
       time,
       title,
       location,
+      address,
       details,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -82,6 +84,30 @@ export default function EventsPage() {
                     <p className="event-meta">
                       {[event.time, event.location].filter(Boolean).join(" · ")}
                     </p>
+                  )}
+                  {event.address && (
+                    <div className="event-address">
+                      <div className="event-address-heading">
+                        <div>
+                          <span>Event address</span>
+                          <address>{event.address}</address>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open in Google Maps <span aria-hidden="true">↗</span>
+                        </a>
+                      </div>
+                      <iframe
+                        className="event-map"
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(event.address)}&output=embed`}
+                        title={`Map showing ${event.address}`}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
                   )}
                   {event.details && <p>{event.details}</p>}
                 </div>
