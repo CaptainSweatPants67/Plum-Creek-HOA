@@ -49,16 +49,22 @@ export function EmailActions({ subject, body }: EmailActionsProps) {
     <div className="email-actions">
       <a
         className="email-action-primary"
-        href={gmailComposeUrl(subject, body)}
-        target="_blank"
-        rel="noreferrer"
+        href={desktopEmailUrl(subject, body)}
       >
-        Open in Gmail <span aria-hidden="true">↗</span>
+        Open your email app <span aria-hidden="true">→</span>
       </a>
-      <EmailCopyButton className="email-action-copy" />
-      <a className="email-action-desktop" href={desktopEmailUrl(subject, body)}>
-        Use desktop email app
-      </a>
+      <div className="email-action-fallbacks">
+        <span>If that does not work:</span>
+        <a
+          className="email-action-gmail"
+          href={gmailComposeUrl(subject, body)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open in Gmail
+        </a>
+        <EmailCopyButton className="email-action-copy" />
+      </div>
     </div>
   );
 }

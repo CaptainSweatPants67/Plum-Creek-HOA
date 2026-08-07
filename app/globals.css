@@ -1207,10 +1207,10 @@ tbody tr:hover {
 }
 
 .form-submit-actions {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -1230,27 +1230,34 @@ tbody tr:hover {
   background: var(--forest-deep);
 }
 
-.form-submit-actions .form-copy-email {
+.form-email-fallbacks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form-email-fallbacks > span {
+  color: #777d76;
+  font-size: 10px;
+}
+
+.form-submit-actions .form-copy-email,
+.form-submit-actions .form-email-gmail {
   background: transparent;
-  border: 1px solid var(--forest);
+  border: 0;
+  border-bottom: 1px solid currentColor;
   color: var(--forest);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 14px 18px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 0;
 }
 
-.form-submit-actions .form-copy-email:hover {
-  background: rgba(31, 74, 55, 0.08);
-}
-
-.form-email-app {
-  border-bottom: 1px solid currentColor;
-  color: var(--forest);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 4px 0;
+.form-submit-actions .form-copy-email:hover,
+.form-submit-actions .form-email-gmail:hover {
+  color: var(--terracotta);
 }
 
 .form-submit-row p {
@@ -1438,8 +1445,8 @@ footer p a {
   align-items: center;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 7px;
   grid-column: 1 / -1;
   justify-content: center;
   justify-self: stretch;
@@ -1464,22 +1471,35 @@ footer p a {
   border-color: rgba(255, 255, 255, 0.7);
 }
 
+.footer-webmaster-fallbacks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.footer-webmaster-fallbacks > span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 9px;
+}
+
 .footer-webmaster-copy,
-.footer-webmaster-desktop {
+.footer-webmaster-gmail {
   background: transparent;
   border: 0;
   color: rgba(255, 255, 255, 0.78);
   cursor: pointer;
   font: inherit;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 8px 4px;
+  padding: 3px 1px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .footer-webmaster-copy:hover,
-.footer-webmaster-desktop:hover {
+.footer-webmaster-gmail:hover {
   color: white;
 }
 
@@ -1556,6 +1576,32 @@ a:focus-visible {
   color: var(--terracotta);
 }
 
+.destination-card-featured {
+  background: var(--forest);
+  color: white;
+}
+
+.destination-card-featured .destination-number {
+  color: #d6b47b;
+}
+
+.destination-card-featured h3,
+.destination-card-featured p {
+  color: white;
+}
+
+.destination-card-featured p {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.destination-card-featured > strong {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.destination-card-featured:hover > strong {
+  color: #f2cf96;
+}
+
 .home-priority-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1626,7 +1672,8 @@ a:focus-visible {
 
 .documents-hero,
 .map-page-hero,
-.contact-page-hero {
+.contact-page-hero,
+.dues-hero {
   background:
     linear-gradient(110deg, rgba(29, 52, 37, 0.97), rgba(49, 77, 56, 0.88)),
     url("/og.png") center / cover;
@@ -1637,13 +1684,16 @@ a:focus-visible {
 .map-page-hero h1,
 .map-page-hero > p:last-child,
 .contact-page-hero h1,
-.contact-page-hero > p:last-child {
+.contact-page-hero > p:last-child,
+.dues-hero h1,
+.dues-hero > p:last-child {
   color: white;
 }
 
 .documents-hero .section-kicker,
 .map-page-hero .section-kicker,
-.contact-page-hero .section-kicker {
+.contact-page-hero .section-kicker,
+.dues-hero .section-kicker {
   color: #d6b47b;
 }
 
@@ -1696,8 +1746,7 @@ a:focus-visible {
   gap: 12px;
 }
 
-.email-actions > a,
-.email-actions > button {
+.email-action-primary {
   align-items: center;
   cursor: pointer;
   display: flex;
@@ -1708,9 +1757,6 @@ a:focus-visible {
   min-height: 50px;
   padding: 13px 18px;
   text-align: left;
-}
-
-.email-action-primary {
   background: var(--forest);
   color: white;
 }
@@ -1719,24 +1765,220 @@ a:focus-visible {
   background: var(--forest-deep);
 }
 
-.email-action-copy {
-  background: var(--paper);
-  border: 1px solid var(--forest);
-  color: var(--forest);
+.email-action-fallbacks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
+.email-action-fallbacks > span {
+  color: #777d76;
+  font-size: 10px;
+}
+
+.email-action-gmail,
+.email-action-copy {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  color: var(--forest);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 0;
+}
+
+.email-action-gmail:hover,
 .email-action-copy:hover {
+  color: var(--terracotta);
+}
+
+.dues-page-section {
+  padding: 100px clamp(24px, 8vw, 126px) 112px;
+}
+
+.dues-summary {
+  background: var(--forest-deep);
+  color: white;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 34px;
+}
+
+.dues-summary > div {
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  padding: clamp(26px, 4vw, 42px);
+}
+
+.dues-summary > div:last-child {
+  border-right: 0;
+}
+
+.dues-summary span {
+  color: #d6b47b;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dues-summary strong {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 400;
+  line-height: 1;
+  margin: 16px 0 12px;
+}
+
+.dues-summary p {
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 12px;
+  margin: 0;
+}
+
+.dues-payment-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dues-payment-card {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  padding: clamp(30px, 5vw, 52px);
+}
+
+.dues-payment-card-venmo {
   background: var(--sand);
 }
 
-.email-action-desktop {
-  border: 1px solid var(--line);
-  color: #596259;
+.dues-payment-card h2,
+.dues-deadline-note h2,
+.dues-future-note h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.08;
 }
 
-.email-action-desktop:hover {
-  border-color: var(--forest);
+.dues-payment-card > p:not(.section-kicker) {
+  color: #596259;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+}
+
+.dues-payment-card address {
+  background: var(--paper);
+  border-left: 4px solid var(--terracotta);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.8;
+  margin: 28px 0;
+  padding: 20px 24px;
+}
+
+.dues-copy-email {
+  background: var(--forest);
+  border: 0;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 5px 0 26px;
+  padding: 12px 16px;
+}
+
+.dues-copy-email:hover {
+  background: var(--forest-deep);
+}
+
+.dues-important-note {
+  background: var(--forest-deep);
+  color: white;
+  margin: 4px 0 28px;
+  padding: 22px 24px;
+}
+
+.dues-important-note > strong {
+  color: #f2cf96;
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.dues-important-note p {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.dues-payment-card .dues-card-note {
+  border-top: 1px solid var(--line);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  margin: 30px 0 0;
+  padding-top: 22px;
+}
+
+.dues-deadline-note {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: clamp(40px, 8vw, 100px);
+  grid-template-columns: minmax(280px, 0.75fr) 1fr;
+  margin: 64px 0 34px;
+  padding: 46px 0;
+}
+
+.dues-deadline-note p:last-child {
+  color: #596259;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  margin: 0;
+}
+
+.dues-future-note {
+  background: var(--forest);
+  color: white;
+  padding: clamp(30px, 5vw, 52px);
+}
+
+.dues-future-note .section-kicker {
+  color: #d6b47b;
+}
+
+.dues-future-note p:not(.section-kicker) {
+  color: rgba(255, 255, 255, 0.75);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  max-width: 850px;
+}
+
+.dues-future-note a,
+.dues-question-link a {
+  border-bottom: 1px solid currentColor;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 12px;
+  padding-bottom: 4px;
+}
+
+.dues-question-link {
+  color: #697068;
+  font-size: 13px;
+  margin: 30px 0 0;
+  text-align: center;
+}
+
+.dues-question-link a {
   color: var(--forest);
+  margin: 0;
 }
 
 .documents-page-section {
@@ -1937,6 +2179,8 @@ a:focus-visible {
   .community-section,
   .contact-section,
   .contact-page-section,
+  .dues-payment-grid,
+  .dues-deadline-note,
   .request-guidance,
   .map-overview-section {
     grid-template-columns: 1fr;
@@ -2191,6 +2435,7 @@ a:focus-visible {
   }
 
   .destination-grid,
+  .dues-summary,
   .tract-grid,
   .tract-stewardship-note {
     grid-template-columns: 1fr;
@@ -2255,8 +2500,22 @@ a:focus-visible {
     flex-direction: column;
   }
 
-  .form-email-app {
-    align-self: flex-start;
+  .form-email-fallbacks {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dues-page-section {
+    padding: 72px 24px 82px;
+  }
+
+  .dues-summary > div {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    border-right: 0;
+  }
+
+  .dues-summary > div:last-child {
+    border-bottom: 0;
   }
 }
 

@@ -25,9 +25,9 @@ export default function ContactPage() {
           <p className="section-kicker">Plum Creek HOA email</p>
           <h2>{hoaEmail}</h2>
           <p>
-            Gmail opens directly in your browser and does not require Windows
-            to have a default email application. You can also copy the address
-            or try your installed desktop email app.
+            The main button opens the default email app on your phone or
+            computer. If it does not open, use the smaller Gmail or copy-email
+            option underneath.
           </p>
         </div>
 

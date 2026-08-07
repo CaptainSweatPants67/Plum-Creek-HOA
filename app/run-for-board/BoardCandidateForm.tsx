@@ -43,11 +43,19 @@ export function BoardCandidateForm() {
       "The resident understands that homeowners elect members to Board seats at the annual meeting and that officer positions are appointed each year by the Board. Submitting this form does not place a name on the ballot or guarantee election or appointment.",
     ].join("\n");
 
-    const gmailUrl = gmailComposeUrl(subject, body);
-    const gmailWindow = window.open(gmailUrl, "_blank");
+    const submitter = (event.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement | null;
 
-    if (gmailWindow) gmailWindow.opener = null;
-    else window.location.href = gmailUrl;
+    if (submitter?.value === "gmail") {
+      const gmailUrl = gmailComposeUrl(subject, body);
+      const gmailWindow = window.open(gmailUrl, "_blank");
+
+      if (gmailWindow) gmailWindow.opener = null;
+      else window.location.href = gmailUrl;
+      return;
+    }
+
+    window.location.href = desktopEmailUrl(subject, body);
   }
 
   return (
@@ -143,14 +151,18 @@ export function BoardCandidateForm() {
 
       <div className="form-submit-row">
         <div className="form-submit-actions">
-          <button type="submit">Prepare Board interest email in Gmail</button>
-          <EmailCopyButton className="form-copy-email" label="Copy HOA email" />
-          <a className="form-email-app" href={desktopEmailUrl()}>
-            Use desktop email app
-          </a>
+          <button type="submit">Prepare Board interest email</button>
+          <div className="form-email-fallbacks">
+            <span>If that does not work:</span>
+            <button className="form-email-gmail" type="submit" value="gmail">
+              Open in Gmail
+            </button>
+            <EmailCopyButton className="form-copy-email" label="Copy HOA email" />
+          </div>
         </div>
         <p>
-          Gmail opens in a new tab with these answers addressed to {hoaEmail}.
+          Your phone or computer&apos;s email app opens with these answers addressed
+          to {hoaEmail}.
           Review the message and select Send.
         </p>
       </div>

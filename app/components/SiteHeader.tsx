@@ -20,6 +20,7 @@ export function SiteHeader() {
         <Link href="/events/">Events</Link>
         <Link href="/neighborhood-map/">Map</Link>
         <Link href="/documents/">Documents</Link>
+        <Link href="/dues/">Dues</Link>
         <Link className="nav-button" href="/contact/">
           Contact
         </Link>

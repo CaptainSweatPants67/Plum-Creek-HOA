@@ -42,11 +42,19 @@ export function CommitteeVolunteerForm() {
       "The resident understands that committee appointments are made or reviewed by the Board of Directors and renewed annually, and that submitting this interest form does not guarantee an appointment.",
     ].join("\n");
 
-    const gmailUrl = gmailComposeUrl(subject, body);
-    const gmailWindow = window.open(gmailUrl, "_blank");
+    const submitter = (event.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement | null;
 
-    if (gmailWindow) gmailWindow.opener = null;
-    else window.location.href = gmailUrl;
+    if (submitter?.value === "gmail") {
+      const gmailUrl = gmailComposeUrl(subject, body);
+      const gmailWindow = window.open(gmailUrl, "_blank");
+
+      if (gmailWindow) gmailWindow.opener = null;
+      else window.location.href = gmailUrl;
+      return;
+    }
+
+    window.location.href = desktopEmailUrl(subject, body);
   }
 
   return (
@@ -158,14 +166,18 @@ export function CommitteeVolunteerForm() {
 
       <div className="form-submit-row">
         <div className="form-submit-actions">
-          <button type="submit">Prepare volunteer email in Gmail</button>
-          <EmailCopyButton className="form-copy-email" label="Copy HOA email" />
-          <a className="form-email-app" href={desktopEmailUrl()}>
-            Use desktop email app
-          </a>
+          <button type="submit">Prepare volunteer email</button>
+          <div className="form-email-fallbacks">
+            <span>If that does not work:</span>
+            <button className="form-email-gmail" type="submit" value="gmail">
+              Open in Gmail
+            </button>
+            <EmailCopyButton className="form-copy-email" label="Copy HOA email" />
+          </div>
         </div>
         <p>
-          Gmail opens in a new tab with these answers addressed to {hoaEmail}.
+          Your phone or computer&apos;s email app opens with these answers addressed
+          to {hoaEmail}.
           Review the message and select Send.
         </p>
       </div>

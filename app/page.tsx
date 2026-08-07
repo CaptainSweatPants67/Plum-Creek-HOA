@@ -6,6 +6,15 @@ import Link from "next/link";
 const destinations = [
   {
     number: "01",
+    title: "Pay Your Dues",
+    description:
+      "Review the 2026 dues amount, check mailing address, Venmo total, and payment deadline.",
+    href: "/dues/",
+    linkLabel: "View payment instructions",
+    featured: true,
+  },
+  {
+    number: "02",
     title: "Neighborhood Map & HOA Tracts",
     description:
       "Explore the neighborhood map and learn about the eight shared tracts owned and maintained by the HOA.",
@@ -13,7 +22,7 @@ const destinations = [
     linkLabel: "Explore the neighborhood",
   },
   {
-    number: "02",
+    number: "03",
     title: "HOA Documents",
     description:
       "Download the recorded restrictions, association bylaws, ratifying declarations, and neighborhood plat maps.",
@@ -21,7 +30,7 @@ const destinations = [
     linkLabel: "View HOA documents",
   },
   {
-    number: "03",
+    number: "04",
     title: "Board of Directors",
     description:
       "Meet the current HOA officers and review Plum Creek's history of Board service.",
@@ -29,7 +38,7 @@ const destinations = [
     linkLabel: "Meet the Board",
   },
   {
-    number: "04",
+    number: "05",
     title: "HOA Committees",
     description:
       "See each committee's purpose, responsibilities, current members, and ways homeowners can help.",
@@ -37,7 +46,7 @@ const destinations = [
     linkLabel: "Explore committees",
   },
   {
-    number: "05",
+    number: "06",
     title: "Community Events",
     description:
       "Find upcoming HOA meetings, neighborhood gatherings, locations, and important dates.",
@@ -45,7 +54,7 @@ const destinations = [
     linkLabel: "View upcoming events",
   },
   {
-    number: "06",
+    number: "07",
     title: "Volunteer",
     description:
       "Share your interests and availability with the Board to help with a committee or neighborhood project.",
@@ -94,7 +103,7 @@ export default function Home() {
         <div className="destination-grid">
           {destinations.map((destination) => (
             <Link
-              className="destination-card"
+              className={`destination-card${destination.featured ? " destination-card-featured" : ""}`}
               href={destination.href}
               key={destination.href}
             >

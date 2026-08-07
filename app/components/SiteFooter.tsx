@@ -23,6 +23,7 @@ export function SiteFooter() {
         <Link href="/events/">Events</Link>
         <Link href="/neighborhood-map/">Map &amp; tracts</Link>
         <Link href="/documents/">Documents</Link>
+        <Link href="/dues/">Pay dues</Link>
         <Link href="/architectural-request/">Architectural request</Link>
       </div>
       <WebmasterContactLink />

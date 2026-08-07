@@ -15,15 +15,8 @@ export function WebmasterContactLink() {
     return `Webmaster Site Issue - ${date}`;
   }
 
-  function openGmail(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
-    const gmailWindow = window.open(
-      gmailComposeUrl(subjectWithCurrentDate()),
-      "_blank",
-    );
-
-    if (gmailWindow) gmailWindow.opener = null;
-    else window.location.href = gmailComposeUrl(subjectWithCurrentDate());
+  function updateGmailEmail(event: MouseEvent<HTMLAnchorElement>) {
+    event.currentTarget.href = gmailComposeUrl(subjectWithCurrentDate());
   }
 
   function updateDesktopEmail(event: MouseEvent<HTMLAnchorElement>) {
@@ -34,22 +27,25 @@ export function WebmasterContactLink() {
     <div className="footer-webmaster">
       <a
         className="footer-webmaster-button"
-        href={gmailComposeUrl("Webmaster Site Issue")}
-        target="_blank"
-        rel="noreferrer"
-        onClick={openGmail}
+        href={desktopEmailUrl("Webmaster Site Issue")}
+        onClick={updateDesktopEmail}
       >
         Contact Michael Bruna with website issues
         <span aria-hidden="true">↗</span>
       </a>
-      <EmailCopyButton className="footer-webmaster-copy" label="Copy HOA email" />
-      <a
-        className="footer-webmaster-desktop"
-        href={desktopEmailUrl("Webmaster Site Issue")}
-        onClick={updateDesktopEmail}
-      >
-        Use email app
-      </a>
+      <div className="footer-webmaster-fallbacks">
+        <span>If that does not work:</span>
+        <a
+          className="footer-webmaster-gmail"
+          href={gmailComposeUrl("Webmaster Site Issue")}
+          target="_blank"
+          rel="noreferrer"
+          onClick={updateGmailEmail}
+        >
+          Open in Gmail
+        </a>
+        <EmailCopyButton className="footer-webmaster-copy" label="Copy HOA email" />
+      </div>
     </div>
   );
 }
