@@ -2105,6 +2105,104 @@ a:focus-visible {
   max-width: 760px;
 }
 
+.homes-value-snapshot {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(360px, 1.22fr);
+  margin-bottom: 38px;
+}
+
+.homes-value-primary {
+  background: var(--forest-deep);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(32px, 5vw, 56px);
+}
+
+.homes-value-primary .section-kicker {
+  color: #d6b47b;
+}
+
+.homes-value-primary strong {
+  color: white;
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(45px, 6vw, 78px);
+  font-weight: 400;
+  line-height: 1;
+  margin-top: 16px;
+}
+
+.homes-value-primary > span {
+  color: rgba(255, 255, 255, 0.76);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-top: 16px;
+  text-transform: uppercase;
+}
+
+.homes-value-details {
+  background: var(--sand);
+  padding: clamp(32px, 5vw, 56px);
+}
+
+.homes-value-details h2 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.homes-value-stats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 28px 0;
+}
+
+.homes-value-stats div {
+  border-left: 3px solid var(--terracotta);
+  padding-left: 16px;
+}
+
+.homes-value-stats strong,
+.homes-value-stats span {
+  display: block;
+}
+
+.homes-value-stats strong {
+  color: var(--forest-deep);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(25px, 3vw, 36px);
+  font-weight: 400;
+}
+
+.homes-value-stats span {
+  color: #596259;
+  font-size: 10px;
+  font-weight: 800;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.homes-value-details > p {
+  color: #596259;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+
+.homes-value-details > a {
+  border-bottom: 1px solid currentColor;
+  color: var(--forest);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-top: 20px;
+  padding-bottom: 3px;
+}
+
 .homes-search-panel {
   background: var(--sand);
   border-left: 4px solid var(--terracotta);
@@ -2609,6 +2707,7 @@ a:focus-visible {
   .dues-deadline-note,
   .dues-support-heading,
   .homes-page-intro,
+  .homes-value-snapshot,
   .homes-verification-note,
   .request-guidance,
   .map-overview-section {
@@ -2948,6 +3047,10 @@ a:focus-visible {
 
   .homes-page-section {
     padding: 72px 24px 82px;
+  }
+
+  .homes-value-stats {
+    grid-template-columns: 1fr;
   }
 
   .homes-street-heading {

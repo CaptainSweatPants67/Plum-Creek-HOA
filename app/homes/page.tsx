@@ -7,7 +7,7 @@ import { HomesDirectory } from "./HomesDirectory";
 export const metadata: Metadata = {
   title: "Homes Within Plum Creek HOA | Gardner, Kansas",
   description:
-    "Search the 119 Gardner, Kansas 66030 property addresses currently located within the boundaries of Plum Creek Homeowners Association.",
+    "Search the 119 Gardner, Kansas 66030 property addresses within Plum Creek HOA and view an approximate Zillow value snapshot.",
 };
 
 function getHoaHomeAddresses() {
@@ -51,6 +51,49 @@ export default function HomesPage() {
             </p>
           </div>
         </div>
+
+        <section
+          className="homes-value-snapshot"
+          aria-labelledby="homes-value-heading"
+        >
+          <div className="homes-value-primary">
+            <p className="section-kicker">Zillow value snapshot</p>
+            <strong>$403,680</strong>
+            <span>Average available Zestimate</span>
+          </div>
+          <div className="homes-value-details">
+            <h2 id="homes-value-heading">
+              An approximate neighborhood value reference.
+            </h2>
+            <div className="homes-value-stats">
+              <div>
+                <strong>106 of 119</strong>
+                <span>Homes with an available Zillow value</span>
+              </div>
+              <div>
+                <strong>$402,700</strong>
+                <span>Median available Zestimate</span>
+              </div>
+            </div>
+            <p>
+              Calculated from Zillow-indexed Zestimates available during an
+              August 2026 review. Thirteen homes did not return a usable
+              Zestimate and were excluded from the calculation. A Zestimate is
+              an automated market estimate, not an appraisal.
+            </p>
+            <p>
+              This information is provided for general reference and is not
+              used by the HOA to set dues or determine property values.
+            </p>
+            <a
+              href="https://www.zillow.com/zestimate/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Learn how Zillow calculates Zestimates
+            </a>
+          </div>
+        </section>
 
         <HomesDirectory addresses={addresses} />
 

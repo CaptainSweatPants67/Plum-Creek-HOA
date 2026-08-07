@@ -232,6 +232,14 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(homes, /Search the HOA home list/);
   assert.match(homes, /real estate professionals/);
   assert.match(homes, /title companies/);
+  assert.match(homes, /Zillow value snapshot/);
+  assert.match(homes, /\$403,680/);
+  assert.match(homes, /106 of 119/);
+  assert.match(homes, /\$402,700/);
+  assert.match(homes, /Thirteen homes did not return/);
+  assert.match(homes, /not an appraisal/);
+  assert.match(homes, /not used by the HOA to set dues/);
+  assert.match(homes, /zillow\.com\/zestimate/);
   assert.match(homes, /101 Cherry Hills Circle, Gardner, KS 66030/);
   assert.match(homes, /650 South Juniper Street, Gardner, KS 66030/);
   assert.match(homes, /720 South Spruce Street, Gardner, KS 66030/);
