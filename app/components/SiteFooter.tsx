@@ -22,7 +22,8 @@ export function SiteFooter() {
         <Link href="/committees/">Committees</Link>
         <Link href="/committee-volunteer/">Volunteer</Link>
         <Link href="/events/">Events</Link>
-        <Link href="/#documents">Documents</Link>
+        <Link href="/neighborhood-map/">Map &amp; tracts</Link>
+        <Link href="/documents/">Documents</Link>
         <Link href="/architectural-request/">Architectural request</Link>
       </div>
     </footer>

@@ -19,10 +19,13 @@ pnpm build
 
 ## Updating content
 
-- Main page copy and document listings: `app/page.tsx`
+- Home page destination and action cards: `app/page.tsx`
+- HOA document listings: `app/documents/page.tsx`
+- Neighborhood map and HOA tract gallery: `app/neighborhood-map/page.tsx`
 - Colors and layout: `app/globals.css`
 - Public PDFs: `public/documents/`
 - Neighborhood imagery: `public/`
+- Enhanced HOA tract images: `public/tracts/`
 - Neighborhood map source link: `Info/MapLink.txt`
 - Board roster and history: `Info/Board.txt`
 - Committee roster: `Info/Commitees.txt`

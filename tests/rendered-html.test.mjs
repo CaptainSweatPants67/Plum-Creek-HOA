@@ -24,14 +24,24 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/committee-volunteer/index.html", import.meta.url),
     "utf8",
   );
+  const documents = await readFile(
+    new URL("../out/documents/index.html", import.meta.url),
+    "utf8",
+  );
+  const neighborhoodMap = await readFile(
+    new URL("../out/neighborhood-map/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
-  assert.match(html, /HOA documents/);
-  assert.match(html, /Declaration of Restrictions/);
-  assert.match(html, /plum-creek-bylaws\.pdf/);
+  assert.match(html, /Explore Plum Creek/);
+  assert.match(html, /Neighborhood Map &amp; HOA Tracts/);
+  assert.match(html, /Request Architectural Control Committee approval/);
+  assert.match(html, /architectural-request/);
+  assert.match(html, /neighborhood-map/);
+  assert.match(html, /documents/);
   assert.match(html, /pchoa66030@gmail\.com/);
-  assert.match(html, /1Kd_etC9UrcOeFTQBGiv3cUlh5d2TUSU/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 
   assert.match(board, /2025/);
@@ -72,4 +82,20 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(committeeVolunteer, /Preferred way to help/);
   assert.match(committeeVolunteer, /Prepare volunteer email/);
   assert.match(committeeVolunteer, /pchoa66030@gmail\.com/);
+
+  assert.match(documents, /HOA documents/);
+  assert.match(documents, /Declaration of Restrictions/);
+  assert.match(documents, /plum-creek-bylaws\.pdf/);
+  assert.match(documents, /supplemental-ratifying-declarations\.pdf/);
+  assert.match(documents, /plat-map-3\.pdf/);
+
+  assert.match(neighborhoodMap, /HOA-owned tracts/);
+  assert.match(neighborhoodMap, /owned by the Plum Creek HOA/i);
+  assert.match(neighborhoodMap, /hired contractors/i);
+  assert.match(neighborhoodMap, /volunteer homeowners/i);
+  assert.match(neighborhoodMap, /Tract A/);
+  assert.match(neighborhoodMap, /Tract H/);
+  assert.match(neighborhoodMap, /tract-a-big-pond\.jpg/);
+  assert.match(neighborhoodMap, /tract-h-juniper-north\.jpg/);
+  assert.match(neighborhoodMap, /1Kd_etC9UrcOeFTQBGiv3cUlh5d2TUSU/);
 });
