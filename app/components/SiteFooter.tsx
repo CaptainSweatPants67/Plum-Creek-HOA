@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WebmasterContactLink } from "./WebmasterContactLink";
 
 const email = "pchoa66030@gmail.com";
 
@@ -26,6 +27,7 @@ export function SiteFooter() {
         <Link href="/documents/">Documents</Link>
         <Link href="/architectural-request/">Architectural request</Link>
       </div>
+      <WebmasterContactLink />
     </footer>
   );
 }

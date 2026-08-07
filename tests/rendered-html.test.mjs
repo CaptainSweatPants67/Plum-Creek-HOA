@@ -48,6 +48,8 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /neighborhood-map/);
   assert.match(html, /documents/);
   assert.match(html, /pchoa66030@gmail\.com/);
+  assert.match(html, /Contact Michael Bruna with website issues/);
+  assert.match(html, /subject=Webmaster%20Site%20Issue/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 
   assert.match(board, /2025–2026 roster/);
