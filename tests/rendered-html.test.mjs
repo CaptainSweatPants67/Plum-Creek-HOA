@@ -135,6 +135,13 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(neighborhoodMap, /owned by the Plum Creek HOA/i);
   assert.match(neighborhoodMap, /hired contractors/i);
   assert.match(neighborhoodMap, /volunteer homeowners/i);
+  assert.match(neighborhoodMap, /5\.78/);
+  assert.match(neighborhoodMap, /251,707\.24 square feet/);
+  assert.match(neighborhoodMap, /8/);
+  assert.match(neighborhoodMap, /3/);
+  assert.match(neighborhoodMap, /Neighborhood ponds/);
+  assert.match(neighborhoodMap, /Community playground/);
+  assert.match(neighborhoodMap, /Green space/);
   assert.match(neighborhoodMap, /Fishing is allowed in the HOA ponds/);
   assert.match(neighborhoodMap, /homeowners and their family members only/);
   assert.match(neighborhoodMap, /catch-and-release only/);
@@ -143,6 +150,11 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(neighborhoodMap, /are not part of Plum Creek HOA/);
   assert.match(neighborhoodMap, /do not have access to Plum Creek HOA parks or ponds/);
   assert.match(neighborhoodMap, /Tract A/);
+  assert.match(neighborhoodMap, /3\.47 acres/);
+  assert.match(neighborhoodMap, /1\.39 acres/);
+  assert.match(neighborhoodMap, /0\.63 acres/);
+  assert.match(neighborhoodMap, /225 E Pawnee LN/);
+  assert.match(neighborhoodMap, /125 E Pawnee LN/);
   assert.match(neighborhoodMap, /Tract H/);
   assert.match(neighborhoodMap, /tract-a-big-pond\.jpg/);
   assert.match(neighborhoodMap, /tract-h-juniper-north\.jpg/);

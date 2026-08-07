@@ -2037,6 +2037,53 @@ a:focus-visible {
   padding: 110px clamp(24px, 8vw, 126px) 120px;
 }
 
+.tract-showcase {
+  background: var(--forest-deep);
+  color: white;
+  display: grid;
+  grid-template-columns: 1.35fr repeat(5, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.tract-showcase > div {
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 150px;
+  padding: 24px;
+}
+
+.tract-showcase > div:last-child {
+  border-right: 0;
+}
+
+.tract-showcase strong {
+  color: #d6b47b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(23px, 2.5vw, 38px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.tract-showcase-primary strong {
+  font-size: clamp(42px, 5vw, 66px);
+}
+
+.tract-showcase span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 12px;
+}
+
+.tract-acreage-note {
+  color: #777d76;
+  font-size: 11px;
+  margin: 0 0 54px;
+  text-align: right;
+}
+
 .tracts-heading {
   align-items: end;
   display: flex;
@@ -2197,6 +2244,32 @@ a:focus-visible {
   margin: 0 0 10px;
 }
 
+.tract-card-details {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 30px;
+  margin: 18px 0;
+  padding: 14px 0;
+}
+
+.tract-card-details > span {
+  color: var(--forest-deep);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tract-card-details small {
+  color: var(--terracotta);
+  display: block;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
 .tract-copy p {
   color: #626a61;
   font-size: 13px;
@@ -2211,6 +2284,18 @@ a:focus-visible {
 }
 
 @media (max-width: 1200px) {
+  .tract-showcase {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tract-showcase > div:nth-child(3) {
+    border-right: 0;
+  }
+
+  .tract-showcase > div:nth-child(-n + 3) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
   .board-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -2497,6 +2582,7 @@ a:focus-visible {
   .destination-grid,
   .dues-summary,
   .tract-access-notices,
+  .tract-showcase,
   .tract-grid,
   .tract-stewardship-note {
     grid-template-columns: 1fr;
@@ -2576,6 +2662,16 @@ a:focus-visible {
   }
 
   .dues-summary > div:last-child {
+    border-bottom: 0;
+  }
+
+  .tract-showcase > div,
+  .tract-showcase > div:nth-child(3) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    border-right: 0;
+  }
+
+  .tract-showcase > div:last-child {
     border-bottom: 0;
   }
 }

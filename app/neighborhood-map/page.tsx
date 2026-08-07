@@ -64,6 +64,12 @@ const tracts = [
   },
 ];
 
+type TractInfo = {
+  acres: number;
+  address?: string;
+  squareFeet: number;
+};
+
 export const metadata: Metadata = {
   title: "Neighborhood Map & HOA Tracts | Plum Creek",
   description:
@@ -77,8 +83,45 @@ function getMapLink() {
   ).trim();
 }
 
+function getTractInfo() {
+  const rows = readFileSync(
+    path.join(process.cwd(), "Info", "Track Info.txt"),
+    "utf8",
+  )
+    .trim()
+    .split(/\r?\n/)
+    .slice(1);
+
+  return new Map<string, TractInfo>(
+    rows.map((row) => {
+      const [tractName, squareFeet, acres, rawAddress] = row
+        .split(",")
+        .map((field) => field.trim());
+      const letter = tractName.replace(/^Tract\s+/i, "");
+      const address = rawAddress && rawAddress.toUpperCase() !== "N/A"
+        ? rawAddress
+        : undefined;
+
+      return [
+        letter,
+        {
+          acres: Number(acres),
+          address,
+          squareFeet: Number(squareFeet),
+        },
+      ];
+    }),
+  );
+}
+
 export default function NeighborhoodMapPage() {
   const mapLink = getMapLink();
+  const tractInfo = getTractInfo();
+  const totalSquareFeet = Array.from(tractInfo.values()).reduce(
+    (total, tract) => total + tract.squareFeet,
+    0,
+  );
+  const totalAcres = totalSquareFeet / 43_560;
 
   return (
     <main className="inner-page">
@@ -112,6 +155,38 @@ export default function NeighborhoodMapPage() {
       </section>
 
       <section className="tracts-section">
+        <div className="tract-showcase" aria-label="Plum Creek HOA tract features">
+          <div className="tract-showcase-primary">
+            <strong>{totalAcres.toFixed(2)}</strong>
+            <span>Approximate HOA-owned acres</span>
+          </div>
+          <div>
+            <strong>8</strong>
+            <span>HOA-owned tracts</span>
+          </div>
+          <div>
+            <strong>3</strong>
+            <span>Neighborhood ponds</span>
+          </div>
+          <div>
+            <strong>1</strong>
+            <span>Community playground</span>
+          </div>
+          <div>
+            <strong>Fishing</strong>
+            <span>Catch-and-release</span>
+          </div>
+          <div>
+            <strong>Green space</strong>
+            <span>Lawns, trees, paths &amp; ponds</span>
+          </div>
+        </div>
+
+        <p className="tract-acreage-note">
+          Total acreage is calculated from 251,707.24 square feet. Acreage shown
+          on individual tract cards is rounded to two decimal places.
+        </p>
+
         <div className="tracts-heading">
           <div>
             <p className="section-kicker">Tracts A–H</p>
@@ -157,22 +232,38 @@ export default function NeighborhoodMapPage() {
         </div>
 
         <div className="tract-grid">
-          {tracts.map((tract) => (
-            <article className="tract-card" key={tract.letter}>
-              <div className="tract-image-wrap">
-                <img
-                  src={tract.image}
-                  alt={`Enhanced view of Tract ${tract.letter}: ${tract.title}`}
-                  loading="lazy"
-                />
-                <span>Tract {tract.letter}</span>
-              </div>
-              <div className="tract-copy">
-                <h3>{tract.title}</h3>
-                <p>{tract.description}</p>
-              </div>
-            </article>
-          ))}
+          {tracts.map((tract) => {
+            const details = tractInfo.get(tract.letter);
+
+            return (
+              <article className="tract-card" key={tract.letter}>
+                <div className="tract-image-wrap">
+                  <img
+                    src={tract.image}
+                    alt={`Enhanced view of Tract ${tract.letter}: ${tract.title}`}
+                    loading="lazy"
+                  />
+                  <span>Tract {tract.letter}</span>
+                </div>
+                <div className="tract-copy">
+                  <h3>{tract.title}</h3>
+                  <div className="tract-card-details">
+                    <span>
+                      <small>Area</small>
+                      {details ? `${details.acres.toFixed(2)} acres` : "Not listed"}
+                    </span>
+                    {details?.address ? (
+                      <span>
+                        <small>Address</small>
+                        {details.address}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p>{tract.description}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         <p className="tract-image-note">

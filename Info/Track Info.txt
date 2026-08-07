@@ -1,0 +1,10 @@
+Tract, Ft^2, Acres, Address
+Tract A, 151218.11, 3.47, N/A
+Tract B, 2930.95, .07, N/A
+Tract C, 2534.2, .06, N/A
+Tract D, 60356.26, 1.39, 225 E Pawnee LN
+Tract E, 27258.40, .63, 125 E Pawnee LN
+Tract F, 4736.0, .11, N/A
+Tract G, 1053.55, .02, N/A
+Tract H, 1619.77, .04, N/A
+
