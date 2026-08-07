@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -228,6 +229,7 @@ export default function NeighborhoodMapPage() {
               Residents of those neighborhoods do not have access to Plum Creek
               HOA parks or ponds.
             </p>
+            <Link href="/homes/">View homes within Plum Creek HOA</Link>
           </article>
         </div>
 

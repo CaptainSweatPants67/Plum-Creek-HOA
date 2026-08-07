@@ -61,6 +61,14 @@ const destinations = [
     href: "/committee-volunteer/",
     linkLabel: "Volunteer with Plum Creek",
   },
+  {
+    number: "08",
+    title: "Homes Within the HOA",
+    description:
+      "Search the 119 Gardner property addresses currently located within Plum Creek HOA boundaries.",
+    href: "/homes/",
+    linkLabel: "Search HOA property addresses",
+  },
 ];
 
 export default function Home() {

@@ -1673,7 +1673,8 @@ a:focus-visible {
 .documents-hero,
 .map-page-hero,
 .contact-page-hero,
-.dues-hero {
+.dues-hero,
+.homes-hero {
   background:
     linear-gradient(110deg, rgba(29, 52, 37, 0.97), rgba(49, 77, 56, 0.88)),
     url("/og.png") center / cover;
@@ -1686,14 +1687,17 @@ a:focus-visible {
 .contact-page-hero h1,
 .contact-page-hero > p:last-child,
 .dues-hero h1,
-.dues-hero > p:last-child {
+.dues-hero > p:last-child,
+.homes-hero h1,
+.homes-hero > p:last-child {
   color: white;
 }
 
 .documents-hero .section-kicker,
 .map-page-hero .section-kicker,
 .contact-page-hero .section-kicker,
-.dues-hero .section-kicker {
+.dues-hero .section-kicker,
+.homes-hero .section-kicker {
   color: #d6b47b;
 }
 
@@ -2052,6 +2056,197 @@ a:focus-visible {
   margin: 0;
 }
 
+.homes-page-section {
+  padding: 100px clamp(24px, 8vw, 126px) 112px;
+}
+
+.homes-page-intro {
+  align-items: center;
+  display: grid;
+  gap: clamp(42px, 8vw, 110px);
+  grid-template-columns: minmax(220px, 0.35fr) 1fr;
+  margin-bottom: 54px;
+}
+
+.homes-count-card {
+  background: var(--forest-deep);
+  color: white;
+  padding: clamp(32px, 5vw, 52px);
+}
+
+.homes-count-card strong {
+  color: #d6b47b;
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(64px, 8vw, 100px);
+  font-weight: 400;
+  line-height: 0.9;
+}
+
+.homes-count-card span {
+  color: rgba(255, 255, 255, 0.78);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+
+.homes-page-intro h2 {
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 1.04;
+}
+
+.homes-page-intro > div:last-child > p:last-child {
+  color: #596259;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  margin: 24px 0 0;
+  max-width: 760px;
+}
+
+.homes-search-panel {
+  background: var(--sand);
+  border-left: 4px solid var(--terracotta);
+  margin-bottom: 30px;
+  padding: clamp(24px, 4vw, 38px);
+}
+
+.homes-search-panel label {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.homes-search-panel input {
+  background: var(--paper);
+  border: 1px solid rgba(49, 77, 56, 0.35);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  padding: 15px 17px;
+  width: min(100%, 620px);
+}
+
+.homes-search-panel input:focus {
+  border-color: var(--forest);
+  outline: 3px solid rgba(49, 77, 56, 0.15);
+}
+
+.homes-search-panel p {
+  color: #596259;
+  font-size: 12px;
+  margin: 12px 0 0;
+}
+
+.homes-street-groups {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.homes-street-card {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  padding: clamp(26px, 4vw, 40px);
+}
+
+.homes-street-heading {
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 18px;
+}
+
+.homes-street-heading h2 {
+  font-size: clamp(27px, 3vw, 38px);
+  line-height: 1.08;
+}
+
+.homes-street-heading span {
+  color: var(--terracotta);
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.homes-street-card ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home-address-item {
+  border-bottom: 1px solid rgba(31, 43, 33, 0.09);
+  font-size: 13px;
+  padding: 11px 0;
+}
+
+.home-address-item:last-child {
+  border-bottom: 0;
+}
+
+.homes-empty-state {
+  background: var(--cream);
+  border: 1px dashed var(--forest);
+  padding: 44px;
+  text-align: center;
+}
+
+.homes-empty-state h2 {
+  font-size: 34px;
+}
+
+.homes-empty-state p {
+  color: #626a61;
+}
+
+.homes-verification-note {
+  align-items: center;
+  background: var(--forest);
+  color: white;
+  display: grid;
+  gap: clamp(28px, 5vw, 64px);
+  grid-template-columns: minmax(280px, 0.8fr) 1fr auto;
+  margin-top: 42px;
+  padding: clamp(30px, 5vw, 48px);
+}
+
+.homes-verification-note .section-kicker {
+  color: #d6b47b;
+}
+
+.homes-verification-note h2 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.08;
+}
+
+.homes-verification-note > p {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  margin: 0;
+}
+
+.homes-verification-note > p a {
+  border-bottom: 1px solid currentColor;
+}
+
+.homes-verification-note > a {
+  background: var(--cream);
+  color: var(--forest-deep);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 13px 17px;
+  text-align: center;
+}
+
 .documents-page-section {
   background: var(--paper);
 }
@@ -2257,6 +2452,16 @@ a:focus-visible {
   color: #596259;
 }
 
+.tract-access-card-boundary a {
+  border-bottom: 1px solid currentColor;
+  color: var(--forest);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-top: 20px;
+  padding-bottom: 4px;
+}
+
 .tract-grid {
   display: grid;
   gap: 22px;
@@ -2403,6 +2608,8 @@ a:focus-visible {
   .dues-payment-grid,
   .dues-deadline-note,
   .dues-support-heading,
+  .homes-page-intro,
+  .homes-verification-note,
   .request-guidance,
   .map-overview-section {
     grid-template-columns: 1fr;
@@ -2663,6 +2870,7 @@ a:focus-visible {
   .destination-grid,
   .dues-summary,
   .dues-support-grid,
+  .homes-street-groups,
   .tract-access-notices,
   .tract-showcase,
   .tract-grid,
@@ -2736,6 +2944,16 @@ a:focus-visible {
 
   .dues-page-section {
     padding: 72px 24px 82px;
+  }
+
+  .homes-page-section {
+    padding: 72px 24px 82px;
+  }
+
+  .homes-street-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .dues-summary > div {

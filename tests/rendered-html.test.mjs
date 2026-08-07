@@ -48,6 +48,10 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/report-concern/index.html", import.meta.url),
     "utf8",
   );
+  const homes = await readFile(
+    new URL("../out/homes/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
@@ -65,6 +69,8 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /Pay Your Dues/);
   assert.match(html, /href="\/report-concern\//);
   assert.match(html, /Report an issue or concern/);
+  assert.match(html, /href="\/homes\//);
+  assert.match(html, /Homes Within the HOA/);
   assert.match(html, /Contact Michael Bruna with website issues/);
   assert.match(html, /su=Webmaster%20Site%20Issue/);
   assert.match(html, /Copy HOA email/);
@@ -218,4 +224,20 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(reportConcern, /Copy HOA email/);
   assert.match(reportConcern, /does not guarantee a specific response/);
   assert.match(reportConcern, /href="\/documents\//);
+
+  assert.match(homes, /Homes within Plum Creek HOA/);
+  assert.match(homes, /currently within the boundaries of Plum Creek HOA/);
+  assert.match(homes, /119/);
+  assert.equal([...homes.matchAll(/class="home-address-item"/g)].length, 119);
+  assert.match(homes, /Search the HOA home list/);
+  assert.match(homes, /real estate professionals/);
+  assert.match(homes, /title companies/);
+  assert.match(homes, /101 Cherry Hills Circle, Gardner, KS 66030/);
+  assert.match(homes, /650 South Juniper Street, Gardner, KS 66030/);
+  assert.match(homes, /720 South Spruce Street, Gardner, KS 66030/);
+  assert.match(homes, /785 South Elm Street, Gardner, KS 66030/);
+  assert.match(homes, /891 South Sycamore Street, Gardner, KS 66030/);
+  assert.match(homes, /719 South Spruce Circle, Gardner, KS 66030/);
+  assert.match(homes, /href="\/neighborhood-map\//);
+  assert.match(homes, /href="\/contact\//);
 });
