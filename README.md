@@ -27,13 +27,14 @@ pnpm build
 - Neighborhood imagery: `public/`
 - Enhanced HOA tract images: `public/tracts/`
 - Neighborhood map source link: `Info/MapLink.txt`
-- Board roster and history: `Info/Board.txt`
+- Current Board roster and seat terms: `app/board/page.tsx`
+- Historical Board records: `Info/Board.txt`
 - Committee roster: `Info/Commitees.txt`
 - Future event dates: `Info/Events.txt`
 
 When replacing a PDF, keep its public filename the same so existing links continue to work. If you add a new document, copy it to `public/documents/` and add a matching entry to the appropriate list at the top of `app/page.tsx`.
 
-Board records use tab-separated columns for year, officer name, and position. The website automatically treats the latest year in `Info/Board.txt` as the current roster.
+Historical Board records use tab-separated columns for year, officer name, and position. The current five-seat roster and staggered seat terms are maintained separately on the Board page.
 
 Committee membership is maintained in `Info/Commitees.txt`. Keep each committee heading on its own line and list each person below it as `Name, Role`. Committee descriptions and responsibilities are maintained on the Committees page.
 

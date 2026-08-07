@@ -32,6 +32,10 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/neighborhood-map/index.html", import.meta.url),
     "utf8",
   );
+  const runForBoard = await readFile(
+    new URL("../out/run-for-board/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
@@ -46,10 +50,21 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /pchoa66030@gmail\.com/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 
-  assert.match(board, /2025/);
+  assert.match(board, /2025–2026 roster/);
   assert.match(board, /roster/);
   assert.match(board, /Laura McKinney/);
   assert.match(board, /Michael Bruna/);
+  assert.match(board, /Lori Whitson/);
+  assert.match(board, /Charity Coker/);
+  assert.match(board, /Vacant/);
+  assert.match(board, /Seat 2024–2026/);
+  assert.match(board, /Seat 2025–2027/);
+  assert.match(board, /Seat Open 2026/);
+  assert.match(board, /Five elected seats/);
+  assert.match(board, /Two or three seats are voted on each year/);
+  assert.match(board, /appoints the President/);
+  assert.match(board, /href="\/events\//);
+  assert.match(board, /href="\/run-for-board\//);
   assert.match(board, /Board history/);
 
   assert.match(events, /Upcoming dates/);
@@ -100,4 +115,15 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(neighborhoodMap, /tract-a-big-pond\.jpg/);
   assert.match(neighborhoodMap, /tract-h-juniper-north\.jpg/);
   assert.match(neighborhoodMap, /1Kd_etC9UrcOeFTQBGiv3cUlh5d2TUSU/);
+
+  assert.match(runForBoard, /Run for the Board/);
+  assert.match(runForBoard, /five elected Board members/i);
+  assert.match(runForBoard, /Officer position of interest/);
+  assert.match(runForBoard, /President/);
+  assert.match(runForBoard, /Vice President/);
+  assert.match(runForBoard, /Secretary/);
+  assert.match(runForBoard, /Treasurer/);
+  assert.match(runForBoard, /Member/);
+  assert.match(runForBoard, /Prepare Board interest email/);
+  assert.match(runForBoard, /pchoa66030@gmail\.com/);
 });

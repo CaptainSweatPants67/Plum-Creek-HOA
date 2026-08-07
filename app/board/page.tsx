@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -7,6 +8,35 @@ type BoardMember = {
   name: string;
   position: string;
 };
+
+const currentBoard = [
+  {
+    name: "Laura McKinney",
+    position: "President",
+    term: "Seat 2024–2026",
+  },
+  {
+    name: "Michael Bruna",
+    position: "Vice President",
+    term: "Seat 2025–2027",
+  },
+  {
+    name: "Lori Whitson",
+    position: "Secretary",
+    term: "Seat 2025–2027",
+  },
+  {
+    name: "Charity Coker",
+    position: "Treasurer",
+    term: "Seat 2025–2027",
+  },
+  {
+    name: "Vacant",
+    position: "Member",
+    term: "Seat Open 2026",
+    vacant: true,
+  },
+];
 
 export const metadata: Metadata = {
   title: "HOA Board | Plum Creek",
@@ -35,8 +65,6 @@ function getBoardMembers(): BoardMember[] {
 
 export default function BoardPage() {
   const members = getBoardMembers();
-  const latestYear = Math.max(...members.map((member) => member.year));
-  const currentBoard = members.filter((member) => member.year === latestYear);
   const history = [...members].sort((a, b) => b.year - a.year);
 
   return (
@@ -54,15 +82,47 @@ export default function BoardPage() {
         <div className="section-heading board-heading">
           <div>
             <p className="section-kicker">Current board</p>
-            <h2>{latestYear} roster</h2>
+            <h2>2025–2026 roster</h2>
           </div>
           <p>For board questions, email pchoa66030@gmail.com.</p>
         </div>
+
+        <div className="board-structure-note">
+          <div>
+            <span>Five elected seats</span>
+            <p>
+              Plum Creek is governed by five Board members serving staggered
+              two-year terms. Two or three seats are voted on each year at the
+              annual meeting of members.
+            </p>
+          </div>
+          <div>
+            <span>Annual officer appointments</span>
+            <p>
+              After Board seats are filled, the Board appoints the President,
+              Vice President, Secretary, and Treasurer positions each year.
+            </p>
+          </div>
+          <div className="board-structure-actions">
+            <Link href="/events/">
+              See the annual meeting date <span aria-hidden="true">→</span>
+            </Link>
+            <Link className="board-run-button" href="/run-for-board/">
+              Run for the Board <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+
         <div className="board-grid">
           {currentBoard.map((member) => (
-            <article className="board-card" key={`${member.name}-${member.position}`}>
+            <article
+              className={`board-card${member.vacant ? " board-card-vacant" : ""}`}
+              key={`${member.name}-${member.position}`}
+            >
               <span>{member.position}</span>
+              <small>Officer</small>
               <h3>{member.name}</h3>
+              <p className="board-term">{member.term}</p>
             </article>
           ))}
         </div>
