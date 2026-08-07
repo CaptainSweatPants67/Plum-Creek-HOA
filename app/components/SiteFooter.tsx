@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { WebmasterContactLink } from "./WebmasterContactLink";
 
-const email = "pchoa66030@gmail.com";
-
 export function SiteFooter() {
   return (
     <footer>
@@ -16,7 +14,7 @@ export function SiteFooter() {
         </span>
       </Link>
       <p>
-        Questions? <a href={`mailto:${email}`}>{email}</a>
+        Questions? <Link href="/contact/">pchoa66030@gmail.com</Link>
       </p>
       <div className="footer-links">
         <Link href="/board/">Board</Link>

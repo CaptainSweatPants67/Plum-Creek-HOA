@@ -72,9 +72,9 @@ export default function Home() {
             <Link className="primary-button" href="/architectural-request/">
               Request architectural approval
             </Link>
-            <a className="outline-button" href="mailto:pchoa66030@gmail.com">
+            <Link className="outline-button" href="/contact/">
               Contact the HOA
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -130,9 +130,9 @@ export default function Home() {
             Send questions about Plum Creek, association business, community
             records, committees, or neighborhood concerns directly to the HOA.
           </p>
-          <a href="mailto:pchoa66030@gmail.com">
+          <Link href="/contact/">
             Email pchoa66030@gmail.com <span aria-hidden="true">↗</span>
-          </a>
+          </Link>
         </div>
       </section>
     </main>

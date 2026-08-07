@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -122,7 +123,7 @@ export default function EventsPage() {
               New HOA and neighborhood event dates will appear here as soon as
               they are confirmed.
             </p>
-            <a href="mailto:pchoa66030@gmail.com">Contact the HOA</a>
+            <Link href="/contact/">Contact the HOA</Link>
           </div>
         )}
       </section>

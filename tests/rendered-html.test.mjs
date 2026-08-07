@@ -36,6 +36,10 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/run-for-board/index.html", import.meta.url),
     "utf8",
   );
+  const contact = await readFile(
+    new URL("../out/contact/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
@@ -48,8 +52,10 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /neighborhood-map/);
   assert.match(html, /documents/);
   assert.match(html, /pchoa66030@gmail\.com/);
+  assert.match(html, /href="\/contact\//);
   assert.match(html, /Contact Michael Bruna with website issues/);
-  assert.match(html, /subject=Webmaster%20Site%20Issue/);
+  assert.match(html, /su=Webmaster%20Site%20Issue/);
+  assert.match(html, /Copy HOA email/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 
   assert.match(board, /2025–2026 roster/);
@@ -92,14 +98,17 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(architecturalRequest, /Architectural approval request/);
   assert.match(architecturalRequest, /Plum Creek property address/);
   assert.match(architecturalRequest, /Project type/);
-  assert.match(architecturalRequest, /Prepare email to the HOA/);
+  assert.match(architecturalRequest, /Prepare request in Gmail/);
+  assert.match(architecturalRequest, /Copy HOA email/);
+  assert.match(architecturalRequest, /mail\.google\.com/);
   assert.match(architecturalRequest, /pchoa66030@gmail\.com/);
   assert.match(architecturalRequest, /declaration-of-restrictions\.pdf/);
 
   assert.match(committeeVolunteer, /Volunteer for a committee/);
   assert.match(committeeVolunteer, /Committee preference/);
   assert.match(committeeVolunteer, /Preferred way to help/);
-  assert.match(committeeVolunteer, /Prepare volunteer email/);
+  assert.match(committeeVolunteer, /Prepare volunteer email in Gmail/);
+  assert.match(committeeVolunteer, /Copy HOA email/);
   assert.match(committeeVolunteer, /pchoa66030@gmail\.com/);
 
   assert.match(documents, /HOA documents/);
@@ -126,6 +135,15 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(runForBoard, /Secretary/);
   assert.match(runForBoard, /Treasurer/);
   assert.match(runForBoard, /Member/);
-  assert.match(runForBoard, /Prepare Board interest email/);
+  assert.match(runForBoard, /Prepare Board interest email in Gmail/);
+  assert.match(runForBoard, /Copy HOA email/);
   assert.match(runForBoard, /pchoa66030@gmail\.com/);
+
+  assert.match(contact, /Contact the HOA/);
+  assert.match(contact, /Open in Gmail/);
+  assert.match(contact, /Copy email address/);
+  assert.match(contact, /Use desktop email app/);
+  assert.match(contact, /mail\.google\.com/);
+  assert.match(contact, /pchoa66030@gmail\.com/);
+  assert.match(contact, /does not collect or store your message/);
 });

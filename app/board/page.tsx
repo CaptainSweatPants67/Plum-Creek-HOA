@@ -84,7 +84,9 @@ export default function BoardPage() {
             <p className="section-kicker">Current board</p>
             <h2>2025–2026 roster</h2>
           </div>
-          <p>For board questions, email pchoa66030@gmail.com.</p>
+          <p>
+            For Board questions, <Link href="/contact/">contact the HOA</Link>.
+          </p>
         </div>
 
         <div className="board-structure-note">

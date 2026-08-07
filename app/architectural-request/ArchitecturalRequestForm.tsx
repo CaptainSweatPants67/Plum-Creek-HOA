@@ -1,8 +1,12 @@
 "use client";
 
 import type { FormEvent } from "react";
-
-const hoaEmail = "pchoa66030@gmail.com";
+import { EmailCopyButton } from "../components/EmailActions";
+import {
+  desktopEmailUrl,
+  gmailComposeUrl,
+  hoaEmail,
+} from "../components/emailLinks";
 
 function value(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -44,7 +48,11 @@ export function ArchitecturalRequestForm() {
       "The homeowner understands that preparing this email does not constitute approval and that supporting plans, drawings, specifications, or photographs should be attached before sending when applicable.",
     ].join("\n");
 
-    window.location.href = `mailto:${hoaEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailUrl = gmailComposeUrl(subject, body);
+    const gmailWindow = window.open(gmailUrl, "_blank");
+
+    if (gmailWindow) gmailWindow.opener = null;
+    else window.location.href = gmailUrl;
   }
 
   return (
@@ -159,9 +167,15 @@ export function ArchitecturalRequestForm() {
       </label>
 
       <div className="form-submit-row">
-        <button type="submit">Prepare email to the HOA</button>
+        <div className="form-submit-actions">
+          <button type="submit">Prepare request in Gmail</button>
+          <EmailCopyButton className="form-copy-email" label="Copy HOA email" />
+          <a className="form-email-app" href={desktopEmailUrl()}>
+            Use desktop email app
+          </a>
+        </div>
         <p>
-          Your email application will open with these answers addressed to {hoaEmail}.
+          Gmail opens in a new tab with these answers addressed to {hoaEmail}.
           Review the message, add attachments, and select Send.
         </p>
       </div>

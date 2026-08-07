@@ -47,9 +47,9 @@ export default function CommitteeVolunteerPage() {
               <Link href="/committees/">
                 Explore the committees <span aria-hidden="true">→</span>
               </Link>
-              <a href="mailto:pchoa66030@gmail.com">
+              <Link href="/contact/">
                 Email the HOA directly <span aria-hidden="true">↗</span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

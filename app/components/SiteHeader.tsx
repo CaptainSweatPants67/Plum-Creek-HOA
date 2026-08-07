@@ -20,9 +20,9 @@ export function SiteHeader() {
         <Link href="/events/">Events</Link>
         <Link href="/neighborhood-map/">Map</Link>
         <Link href="/documents/">Documents</Link>
-        <a className="nav-button" href="mailto:pchoa66030@gmail.com">
+        <Link className="nav-button" href="/contact/">
           Contact
-        </a>
+        </Link>
       </nav>
     </header>
   );
