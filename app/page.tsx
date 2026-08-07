@@ -133,14 +133,14 @@ export default function Home() {
         </div>
 
         <div className="priority-action priority-action-contact">
-          <p className="section-kicker">Contact the HOA</p>
-          <h2>Questions for the Board?</h2>
+          <p className="section-kicker">Neighborhood issue or concern?</p>
+          <h2>Report it to the HOA.</h2>
           <p>
-            Send questions about Plum Creek, association business, community
-            records, committees, or neighborhood concerns directly to the HOA.
+            Prepare a report for a general concern, possible covenants
+            violation, or another issue that the Board should review.
           </p>
-          <Link href="/contact/">
-            Email pchoa66030@gmail.com <span aria-hidden="true">↗</span>
+          <Link href="/report-concern/">
+            Report an issue or concern <span aria-hidden="true">→</span>
           </Link>
         </div>
       </section>

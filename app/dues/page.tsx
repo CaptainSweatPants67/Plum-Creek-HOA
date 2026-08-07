@@ -35,7 +35,7 @@ export default function DuesPage() {
           <div>
             <span>Late date</span>
             <strong>May 1</strong>
-            <p>Unpaid 2026 accounts are considered late</p>
+            <p>Add the $30 late fee to payments made after this date</p>
           </div>
         </div>
 
@@ -56,6 +56,8 @@ export default function DuesPage() {
             </address>
             <p className="dues-card-note">
               The 2026 amount due by personal check is <strong>$260.00</strong>.
+              If paying after May 1, 2026, include the $30 late fee for a total
+              of <strong>$290.00</strong>.
             </p>
           </article>
 
@@ -79,7 +81,9 @@ export default function DuesPage() {
             </div>
             <p className="dues-card-note">
               Submit <strong>$265.14</strong> through Venmo. This total includes
-              the processing fee for the $260.00 dues amount.
+              the processing fee for the $260.00 dues amount. If paying after
+              May 1, 2026, add the $30 late fee and contact the HOA to confirm
+              the correct Venmo total including its processing fee.
             </p>
           </article>
         </div>
@@ -87,12 +91,13 @@ export default function DuesPage() {
         <div className="dues-deadline-note">
           <div>
             <p className="section-kicker">Payment timing</p>
-            <h2>Please pay before May 1, 2026.</h2>
+            <h2>Payments after May 1, 2026 include a $30 late fee.</h2>
           </div>
           <p>
-            Accounts that remain unpaid as of May 1 will be considered late,
-            and formal notices will be mailed. If you have already sent your
-            payment, please disregard this reminder.
+            Accounts that remain unpaid as of May 1, 2026 will be considered
+            late, and formal notices will be mailed. The amount due after May 1
+            is <strong>$290.00</strong> before any Venmo processing fee. If you
+            have already sent your payment, please disregard this reminder.
           </p>
         </div>
 

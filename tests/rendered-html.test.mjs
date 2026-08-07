@@ -44,6 +44,10 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/dues/index.html", import.meta.url),
     "utf8",
   );
+  const reportConcern = await readFile(
+    new URL("../out/report-concern/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
@@ -59,6 +63,8 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /href="\/contact\//);
   assert.match(html, /href="\/dues\//);
   assert.match(html, /Pay Your Dues/);
+  assert.match(html, /href="\/report-concern\//);
+  assert.match(html, /Report an issue or concern/);
   assert.match(html, /Contact Michael Bruna with website issues/);
   assert.match(html, /su=Webmaster%20Site%20Issue/);
   assert.match(html, /Copy HOA email/);
@@ -161,6 +167,8 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(dues, /2026 dues/);
   assert.match(dues, /\$260\.00/);
   assert.match(dues, /\$265\.14/);
+  assert.match(dues, /\$290\.00/);
+  assert.match(dues, /\$30 late fee/);
   assert.match(dues, /P\.O\. Box 14/);
   assert.match(dues, /Gardner, KS 66030/);
   assert.match(dues, /pchoa66030@gmail\.com/);
@@ -170,4 +178,17 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(dues, /January 1, 2027/);
   assert.match(dues, /set by the Board each year/);
   assert.match(dues, /href="\/events\//);
+
+  assert.match(reportConcern, /Report an issue or concern/);
+  assert.match(reportConcern, /General concern/);
+  assert.match(reportConcern, /Possible covenants violation/);
+  assert.match(reportConcern, /Other issue/);
+  assert.match(reportConcern, /Issue location or address/);
+  assert.match(reportConcern, /Date observed/);
+  assert.match(reportConcern, /Describe the issue or concern/);
+  assert.match(reportConcern, /Prepare concern email/);
+  assert.match(reportConcern, /Open in Gmail/);
+  assert.match(reportConcern, /Copy HOA email/);
+  assert.match(reportConcern, /does not guarantee a specific response/);
+  assert.match(reportConcern, /href="\/documents\//);
 });
