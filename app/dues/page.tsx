@@ -39,6 +39,55 @@ export default function DuesPage() {
           </div>
         </div>
 
+        <section className="dues-support-section">
+          <div className="dues-support-heading">
+            <div>
+              <p className="section-kicker">What your dues support</p>
+              <h2>Maintaining Plum Creek&apos;s shared responsibilities.</h2>
+            </div>
+            <div>
+              <p>
+                Annual dues help cover the association&apos;s shared property,
+                maintenance, insurance, and operating expenses.
+              </p>
+              <Link href="/neighborhood-map/">
+                Explore the HOA-owned land, ponds, and green spaces
+              </Link>
+            </div>
+          </div>
+
+          <div className="dues-support-grid">
+            <article>
+              <span>01</span>
+              <h3>Land &amp; green spaces</h3>
+              <p>
+                Mowing and routine upkeep for HOA-owned land and neighborhood
+                green spaces.
+              </p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Pond maintenance</h3>
+              <p>
+                Ongoing care and maintenance for the three HOA-owned ponds.
+              </p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Insurance</h3>
+              <p>Association insurance costs for Plum Creek HOA.</p>
+            </article>
+            <article>
+              <span>04</span>
+              <h3>Administration</h3>
+              <p>
+                Administrative fees and the routine operating costs of the
+                association.
+              </p>
+            </article>
+          </div>
+        </section>
+
         <div className="dues-payment-grid">
           <article className="dues-payment-card">
             <p className="section-kicker">Option one</p>

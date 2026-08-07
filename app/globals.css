@@ -1840,6 +1840,77 @@ a:focus-visible {
   margin: 0;
 }
 
+.dues-support-section {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 50px;
+  padding: 30px 0 54px;
+}
+
+.dues-support-heading {
+  align-items: end;
+  display: grid;
+  gap: clamp(36px, 7vw, 90px);
+  grid-template-columns: minmax(300px, 1fr) minmax(280px, 0.7fr);
+  margin-bottom: 38px;
+}
+
+.dues-support-heading h2 {
+  font-size: clamp(36px, 4.5vw, 58px);
+  line-height: 1.04;
+}
+
+.dues-support-heading > div:last-child > p {
+  color: #596259;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  margin: 0 0 20px;
+}
+
+.dues-support-heading a {
+  border-bottom: 1px solid currentColor;
+  color: var(--forest);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  padding-bottom: 5px;
+}
+
+.dues-support-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dues-support-grid article {
+  background: var(--cream);
+  border-top: 3px solid var(--forest);
+  min-height: 220px;
+  padding: 26px;
+}
+
+.dues-support-grid article > span {
+  color: var(--terracotta);
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin-bottom: 32px;
+}
+
+.dues-support-grid h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.12;
+  margin: 0 0 14px;
+}
+
+.dues-support-grid p {
+  color: #626a61;
+  font-size: 13px;
+  margin: 0;
+}
+
 .dues-payment-grid {
   display: grid;
   gap: 24px;
@@ -2331,12 +2402,17 @@ a:focus-visible {
   .contact-page-section,
   .dues-payment-grid,
   .dues-deadline-note,
+  .dues-support-heading,
   .request-guidance,
   .map-overview-section {
     grid-template-columns: 1fr;
   }
 
   .destination-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dues-support-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2586,6 +2662,7 @@ a:focus-visible {
 
   .destination-grid,
   .dues-summary,
+  .dues-support-grid,
   .tract-access-notices,
   .tract-showcase,
   .tract-grid,

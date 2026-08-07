@@ -197,6 +197,14 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(dues, /January 1, 2027/);
   assert.match(dues, /set by the Board each year/);
   assert.match(dues, /href="\/events\//);
+  assert.match(dues, /What your dues support/);
+  assert.match(dues, /Land &amp; green spaces/);
+  assert.match(dues, /Mowing and routine upkeep/);
+  assert.match(dues, /Pond maintenance/);
+  assert.match(dues, /three HOA-owned ponds/);
+  assert.match(dues, /Insurance/);
+  assert.match(dues, /Administrative fees/);
+  assert.match(dues, /href="\/neighborhood-map\//);
 
   assert.match(reportConcern, /Report an issue or concern/);
   assert.match(reportConcern, /General concern/);
