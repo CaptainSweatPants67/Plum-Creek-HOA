@@ -135,6 +135,13 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(neighborhoodMap, /owned by the Plum Creek HOA/i);
   assert.match(neighborhoodMap, /hired contractors/i);
   assert.match(neighborhoodMap, /volunteer homeowners/i);
+  assert.match(neighborhoodMap, /Fishing is allowed in the HOA ponds/);
+  assert.match(neighborhoodMap, /homeowners and their family members only/);
+  assert.match(neighborhoodMap, /catch-and-release only/);
+  assert.match(neighborhoodMap, /Plum Creek Estates/);
+  assert.match(neighborhoodMap, /Plum Creek Manor/);
+  assert.match(neighborhoodMap, /are not part of Plum Creek HOA/);
+  assert.match(neighborhoodMap, /do not have access to Plum Creek HOA parks or ponds/);
   assert.match(neighborhoodMap, /Tract A/);
   assert.match(neighborhoodMap, /Tract H/);
   assert.match(neighborhoodMap, /tract-a-big-pond\.jpg/);

@@ -133,6 +133,29 @@ export default function NeighborhoodMapPage() {
           </p>
         </div>
 
+        <div className="tract-access-notices">
+          <article className="tract-access-card tract-access-card-fishing">
+            <span>Catch-and-release fishing</span>
+            <h3>Fishing is allowed in the HOA ponds.</h3>
+            <p>
+              Fishing is for Plum Creek HOA homeowners and their family members
+              only. All fish must be released back into the pond; fishing is
+              catch-and-release only.
+            </p>
+          </article>
+
+          <article className="tract-access-card tract-access-card-boundary">
+            <span>Private community access</span>
+            <h3>Plum Creek HOA parks and ponds are not public amenities.</h3>
+            <p>
+              <strong>Plum Creek Estates</strong> and{" "}
+              <strong>Plum Creek Manor</strong> are not part of Plum Creek HOA.
+              Residents of those neighborhoods do not have access to Plum Creek
+              HOA parks or ponds.
+            </p>
+          </article>
+        </div>
+
         <div className="tract-grid">
           {tracts.map((tract) => (
             <article className="tract-card" key={tract.letter}>

@@ -2074,6 +2074,66 @@ a:focus-visible {
   margin: 0;
 }
 
+.tract-access-notices {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 30px;
+}
+
+.tract-access-card {
+  border: 1px solid var(--line);
+  padding: clamp(28px, 4vw, 42px);
+}
+
+.tract-access-card > span {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+
+.tract-access-card h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(27px, 3vw, 38px);
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0 0 18px;
+}
+
+.tract-access-card p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.tract-access-card-fishing {
+  background: var(--forest);
+  color: white;
+}
+
+.tract-access-card-fishing > span {
+  color: #d6b47b;
+}
+
+.tract-access-card-fishing p {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.tract-access-card-boundary {
+  background: var(--cream);
+  border-left: 4px solid var(--terracotta);
+}
+
+.tract-access-card-boundary > span {
+  color: var(--terracotta);
+}
+
+.tract-access-card-boundary p {
+  color: #596259;
+}
+
 .tract-grid {
   display: grid;
   gap: 22px;
@@ -2436,6 +2496,7 @@ a:focus-visible {
 
   .destination-grid,
   .dues-summary,
+  .tract-access-notices,
   .tract-grid,
   .tract-stewardship-note {
     grid-template-columns: 1fr;
