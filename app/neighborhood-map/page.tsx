@@ -160,15 +160,15 @@ export default function NeighborhoodMapPage() {
             <strong>{totalAcres.toFixed(2)}</strong>
             <span>Approximate HOA-owned acres</span>
           </div>
-          <div>
+          <div className="tract-showcase-number">
             <strong>8</strong>
             <span>HOA-owned tracts</span>
           </div>
-          <div>
+          <div className="tract-showcase-number">
             <strong>3</strong>
             <span>Neighborhood ponds</span>
           </div>
-          <div>
+          <div className="tract-showcase-number">
             <strong>1</strong>
             <span>Community playground</span>
           </div>
