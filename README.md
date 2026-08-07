@@ -25,11 +25,14 @@ pnpm build
 - Neighborhood imagery: `public/`
 - Neighborhood map source link: `Info/MapLink.txt`
 - Board roster and history: `Info/Board.txt`
+- Committee roster: `Info/Commitees.txt`
 - Future event dates: `Info/Events.txt`
 
 When replacing a PDF, keep its public filename the same so existing links continue to work. If you add a new document, copy it to `public/documents/` and add a matching entry to the appropriate list at the top of `app/page.tsx`.
 
 Board records use tab-separated columns for year, officer name, and position. The website automatically treats the latest year in `Info/Board.txt` as the current roster.
+
+Committee membership is maintained in `Info/Commitees.txt`. Keep each committee heading on its own line and list each person below it as `Name, Role`. Committee descriptions and responsibilities are maintained on the Committees page.
 
 Add future events to `Info/Events.txt`, one event per line, using tab-separated columns in this order: `YYYY-MM-DD`, time, event name, location, street address, and details. Past dates are automatically omitted from the Events page. When an event includes a street address, the page automatically displays a map preview and a Google Maps link.
 

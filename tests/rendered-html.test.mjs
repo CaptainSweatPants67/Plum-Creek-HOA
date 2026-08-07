@@ -12,6 +12,18 @@ test("exports the Plum Creek community pages", async () => {
     new URL("../out/events/index.html", import.meta.url),
     "utf8",
   );
+  const committees = await readFile(
+    new URL("../out/committees/index.html", import.meta.url),
+    "utf8",
+  );
+  const architecturalRequest = await readFile(
+    new URL("../out/architectural-request/index.html", import.meta.url),
+    "utf8",
+  );
+  const committeeVolunteer = await readFile(
+    new URL("../out/committee-volunteer/index.html", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
@@ -36,4 +48,28 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(events, /128 E Park St, Gardner, KS 66030/);
   assert.match(events, /Open in Google Maps/);
   assert.match(events, /google\.com\/maps\?q=128%20E%20Park%20St%2C%20Gardner%2C%20KS%2066030/);
+
+  assert.match(committees, /Architectural Control Committee/);
+  assert.match(committees, /Covenants Review Committee/);
+  assert.match(committees, /Beautification Committee/);
+  assert.match(committees, /Welcoming Committee/);
+  assert.match(committees, /appointed/i);
+  assert.match(committees, /renewed each year/i);
+  assert.match(committees, /Michael Bruna/);
+  assert.match(committees, /Andrew Benedict-Nelson/);
+  assert.match(committees, /architectural-request/);
+  assert.match(committees, /committee-volunteer/);
+
+  assert.match(architecturalRequest, /Architectural approval request/);
+  assert.match(architecturalRequest, /Plum Creek property address/);
+  assert.match(architecturalRequest, /Project type/);
+  assert.match(architecturalRequest, /Prepare email to the HOA/);
+  assert.match(architecturalRequest, /pchoa66030@gmail\.com/);
+  assert.match(architecturalRequest, /declaration-of-restrictions\.pdf/);
+
+  assert.match(committeeVolunteer, /Volunteer for a committee/);
+  assert.match(committeeVolunteer, /Committee preference/);
+  assert.match(committeeVolunteer, /Preferred way to help/);
+  assert.match(committeeVolunteer, /Prepare volunteer email/);
+  assert.match(committeeVolunteer, /pchoa66030@gmail\.com/);
 });

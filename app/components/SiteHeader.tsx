@@ -15,6 +15,7 @@ export function SiteHeader() {
       <nav aria-label="Primary navigation">
         <Link href="/">Home</Link>
         <Link href="/board/">Board</Link>
+        <Link href="/committees/">Committees</Link>
         <Link href="/events/">Events</Link>
         <Link href="/#documents">Documents</Link>
         <a className="nav-button" href="mailto:pchoa66030@gmail.com">

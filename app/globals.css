@@ -727,6 +727,393 @@ tbody tr:hover {
   color: #d6b47b;
 }
 
+.committees-hero {
+  background:
+    linear-gradient(110deg, rgba(248, 243, 233, 0.98), rgba(233, 220, 199, 0.88)),
+    url("/og.png") center / cover;
+}
+
+.architectural-hero {
+  background:
+    linear-gradient(110deg, rgba(29, 52, 37, 0.97), rgba(49, 77, 56, 0.88)),
+    url("/og.png") center / cover;
+}
+
+.architectural-hero h1,
+.architectural-hero > p:last-child {
+  color: white;
+}
+
+.architectural-hero .section-kicker {
+  color: #d6b47b;
+}
+
+.volunteer-hero {
+  background:
+    linear-gradient(110deg, rgba(248, 243, 233, 0.98), rgba(233, 220, 199, 0.9)),
+    url("/og.png") center / cover;
+}
+
+.committees-section,
+.request-section {
+  padding: 100px clamp(24px, 8vw, 126px);
+}
+
+.committee-appointment-note {
+  align-items: center;
+  background: var(--forest-deep);
+  color: white;
+  display: grid;
+  gap: 34px;
+  grid-template-columns: minmax(160px, 0.35fr) 1fr;
+  margin-bottom: 28px;
+  padding: 28px 34px;
+}
+
+.committee-appointment-note > span {
+  color: #d6b47b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.committee-appointment-note p {
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+}
+
+.committee-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.committee-card {
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  padding: 34px;
+}
+
+.committee-card-featured {
+  background: var(--cream);
+  border-top: 4px solid var(--terracotta);
+  padding-top: 31px;
+}
+
+.committee-number {
+  color: var(--terracotta);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  margin-bottom: 26px;
+}
+
+.committee-card > h2 {
+  color: var(--forest-deep);
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 1.04;
+}
+
+.committee-card > p {
+  color: #626a61;
+  margin: 22px 0 30px;
+}
+
+.committee-responsibilities {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.committee-responsibilities h3,
+.committee-members h3 {
+  color: var(--forest);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+}
+
+.committee-responsibilities ul {
+  color: #626a61;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.committee-responsibilities li + li {
+  margin-top: 8px;
+}
+
+.committee-members {
+  border-top: 1px solid var(--line);
+  margin-top: 28px;
+  padding-top: 24px;
+}
+
+.committee-members ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.committee-members li {
+  align-items: baseline;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.committee-members li span {
+  color: #737a72;
+  font-size: 12px;
+  text-align: right;
+}
+
+.committee-board-membership,
+.committee-open {
+  color: #626a61;
+  margin: 0;
+}
+
+.committee-board-membership a {
+  border-bottom: 1px solid var(--forest);
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.committee-action {
+  align-items: center;
+  background: var(--forest);
+  color: white;
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  justify-content: space-between;
+  margin-top: auto;
+  padding: 15px 18px;
+}
+
+.committee-action:hover {
+  background: var(--forest-deep);
+}
+
+.committee-contact-band {
+  align-items: center;
+  background: var(--sand);
+  display: grid;
+  gap: 34px;
+  grid-template-columns: 0.8fr 1fr auto;
+  margin-top: 20px;
+  padding: 42px;
+}
+
+.committee-contact-band h2 {
+  font-size: clamp(34px, 4vw, 52px);
+}
+
+.committee-contact-band p {
+  color: #626a61;
+  margin: 0;
+}
+
+.committee-contact-band .section-kicker {
+  margin-bottom: 12px;
+}
+
+.committee-contact-band a {
+  background: var(--forest);
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 13px 18px;
+}
+
+.request-guidance {
+  display: grid;
+  gap: clamp(50px, 8vw, 120px);
+  grid-template-columns: minmax(280px, 0.7fr) minmax(380px, 1.3fr);
+  margin-bottom: 76px;
+}
+
+.request-guidance h2 {
+  font-size: clamp(44px, 5vw, 66px);
+}
+
+.request-guidance-copy > p:first-child {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  margin: 0 0 24px;
+}
+
+.request-guidance-copy ul {
+  background: var(--cream);
+  border-left: 4px solid var(--terracotta);
+  margin: 0;
+  padding: 24px 28px 24px 48px;
+}
+
+.request-guidance-copy li + li {
+  margin-top: 8px;
+}
+
+.request-reminder {
+  color: #626a61;
+  font-size: 13px;
+  margin: 22px 0;
+}
+
+.request-resource-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.request-resource-links a {
+  border-bottom: 1px solid var(--forest);
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 800;
+  padding-bottom: 4px;
+}
+
+.architectural-form {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  padding: clamp(28px, 5vw, 58px);
+}
+
+.form-section-heading {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 22px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+}
+
+.form-section-heading:not(:first-child) {
+  margin-top: 58px;
+}
+
+.form-section-heading > span {
+  color: var(--terracotta);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  padding-top: 7px;
+}
+
+.form-section-heading h2 {
+  font-size: clamp(30px, 3vw, 40px);
+  line-height: 1.1;
+}
+
+.form-section-heading p {
+  color: #697068;
+  margin: 8px 0 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field > span {
+  color: var(--forest-deep);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.form-field-full {
+  grid-column: 1 / -1;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  background: var(--paper);
+  border: 1px solid rgba(31, 43, 33, 0.22);
+  border-radius: 0;
+  color: var(--ink);
+  font: inherit;
+  min-width: 0;
+  padding: 12px 13px;
+  width: 100%;
+}
+
+.form-field textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: var(--terracotta);
+  outline: 3px solid rgba(169, 88, 59, 0.14);
+}
+
+.form-confirmation {
+  align-items: flex-start;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+  padding: 18px;
+}
+
+.form-confirmation input {
+  height: 18px;
+  margin: 3px 0 0;
+  width: 18px;
+}
+
+.form-confirmation span {
+  color: #5f675e;
+  font-size: 13px;
+}
+
+.form-submit-row {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.form-submit-row button {
+  background: var(--forest);
+  border: 0;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 15px 22px;
+}
+
+.form-submit-row button:hover {
+  background: var(--forest-deep);
+}
+
+.form-submit-row p {
+  color: #697068;
+  font-size: 12px;
+  margin: 0;
+}
+
 .event-list {
   border-top: 1px solid var(--line);
 }
@@ -890,6 +1277,7 @@ footer p a {
 
 .footer-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   justify-self: end;
 }
@@ -911,7 +1299,13 @@ a:focus-visible {
 
   .intro,
   .community-section,
-  .contact-section {
+  .contact-section,
+  .request-guidance {
+    grid-template-columns: 1fr;
+  }
+
+  .committee-contact-band {
+    align-items: start;
     grid-template-columns: 1fr;
   }
 
@@ -1083,7 +1477,9 @@ a:focus-visible {
   .inner-hero,
   .board-section,
   .history-section,
-  .events-section {
+  .events-section,
+  .committees-section,
+  .request-section {
     padding-left: 24px;
     padding-right: 24px;
   }
@@ -1095,7 +1491,9 @@ a:focus-visible {
 
   .board-section,
   .history-section,
-  .events-section {
+  .events-section,
+  .committees-section,
+  .request-section {
     padding-bottom: 72px;
     padding-top: 72px;
   }
@@ -1117,6 +1515,37 @@ a:focus-visible {
 
   .event-map {
     height: 260px;
+  }
+
+  .committee-appointment-note,
+  .committee-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .committee-appointment-note,
+  .committee-card,
+  .committee-contact-band,
+  .architectural-form {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .committee-card {
+    min-height: 0;
+  }
+
+  .committee-action {
+    margin-top: 28px;
+  }
+
+  .form-field-full {
+    grid-column: auto;
+  }
+
+  .form-submit-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
