@@ -36,6 +36,8 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /<title>Plum Creek Homeowners Association<\/title>/i);
   assert.match(html, /\/og\.png/);
   assert.match(html, /Explore Plum Creek/);
+  assert.match(html, /Gardner, Kansas 66030/);
+  assert.doesNotMatch(html, /Rooted in community/);
   assert.match(html, /Neighborhood Map &amp; HOA Tracts/);
   assert.match(html, /Request Architectural Control Committee approval/);
   assert.match(html, /architectural-request/);

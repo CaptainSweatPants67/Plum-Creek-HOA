@@ -10,6 +10,7 @@ export function SiteHeader() {
         <span>
           <strong>Plum Creek</strong>
           <small>Homeowners Association</small>
+          <small className="brand-location">Gardner, Kansas 66030</small>
         </span>
       </Link>
       <nav aria-label="Primary navigation">

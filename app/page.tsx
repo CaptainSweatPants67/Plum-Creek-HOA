@@ -79,34 +79,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="intro home-intro" id="about">
-        <div>
-          <p className="section-kicker">Our neighborhood</p>
-          <h1>Rooted in community.</h1>
-        </div>
-        <div className="intro-copy">
-          <p>
-            The Plum Creek Homeowners Association supports the shared interests
-            of homeowners and keeps important neighborhood information easy to
-            find.
-          </p>
-          <div className="feature-row">
-            <Link href="/neighborhood-map/">
-              <strong>8</strong>
-              <span>HOA-owned tracts</span>
-            </Link>
-            <Link href="/documents/">
-              <strong>6</strong>
-              <span>Community documents</span>
-            </Link>
-            <Link href="/events/">
-              <strong>Dates</strong>
-              <span>Community events</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       <section className="home-destinations">
         <div className="section-heading">
           <div>
