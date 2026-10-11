@@ -43,11 +43,9 @@ Add future events to `Info/Events.txt`, one event per line, using tab-separated 
 
 ## Cloudflare deployment from GitHub
 
-1. Push this repository to GitHub.
-2. In Cloudflare, create a new Pages project and connect the GitHub repository.
-3. Use `pnpm build` as the build command.
-4. Use `out` as the build output directory.
-5. After the first deployment, attach the HOA domain to the Pages project in Cloudflare.
+The existing GitHub repository is connected to Cloudflare Workers Builds for the `plum-creek-hoa` service. Push to `main` to trigger that deployment; check the commit's **Workers Builds: plum-creek-hoa** status for the result. Keep the existing Cloudflare connection and build settings.
+
+For a separate Cloudflare Pages deployment, use `pnpm build` as the build command and `out` as the output directory, then attach the HOA domain in Cloudflare.
 
 The project generates a static export. Public content has a saved fallback; the homeowner portal and live roster connect to Supabase from the browser. Cloudflare rebuilds it automatically whenever the GitHub repository changes. `lib/supabase-public-config.json` supplies this website's public project URL and publishable key, so a GitHub build works without `.env.local`. Optional `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` build variables override those defaults; never use a service-role key.
 

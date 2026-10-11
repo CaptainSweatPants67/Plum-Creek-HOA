@@ -76,7 +76,7 @@ Rental storage remains private, with no upload/download UI or permissive Storage
 
 ## Deployment and email
 
-The site still exports static files for Cloudflare Pages; live roster, member data and Auth use Supabase from the browser.
+The existing GitHub integration deploys the `plum-creek-hoa` Cloudflare Worker when `main` changes. The local `pnpm build` command also produces a static export suitable for Pages. Live roster, member data and Auth use Supabase from the browser.
 
 - Local `.env.local` already has the project URL and publishable key and is ignored by Git. `.env.example` lists required variables.
 - The tracked `lib/supabase-public-config.json` contains only the public project URL and modern publishable key for GitHub/Cloudflare builds without a local environment file. Optional `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` build variables override those defaults. Never add a service-role/secret key.
@@ -85,7 +85,7 @@ The site still exports static files for Cloudflare Pages; live roster, member da
 - Configure production SMTP and verify confirmation/recovery delivery before general homeowner rollout. Default Supabase mail is restricted to project-team addresses. [SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp), [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
 - Keep the private schema outside exposed Data API schemas. CAPTCHA/global abuse controls are a production follow-up; the application email limiter is not an IP/global limiter.
 
-Production website deployment, SMTP delivery and the redirect allowlist were not changed or verified here. No signup email or invitation was sent, and no production Auth account was created. The administrator chooses their own password and confirms their mailbox.
+The website changes were pushed to GitHub on October 11, 2026, and Cloudflare's Workers Builds check succeeded for commit `1224e97`. The hosted domain, SMTP delivery and the redirect allowlist still need verification before homeowner rollout. No signup email or invitation was sent, and no production Auth account was created. The administrator chooses their own password and confirms their mailbox.
 
 ## Migration state and validation
 
