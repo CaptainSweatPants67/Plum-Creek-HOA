@@ -11,7 +11,7 @@ In **Authentication → Emails**, set these subject/content pairs:
 
 Both templates use Supabase's `{{ .ConfirmationURL }}` so the existing verification endpoint verifies the token and redirects to the portal. They do not embed a localhost address or manually bypass email verification.
 
-On October 11, 2026, Site URL and the exact allowed callback were set to `https://plumcreekgardner.com/portal/` in the hosted project. The previous Site URL was `http://localhost:3000`, with no additional allowed callbacks. The CLI preview showed only these two changes; a post-update comparison confirmed no remaining differences and email confirmation remains enabled. The website already sends `window.location.origin + "/portal/"` for signup and recovery.
+On October 11, 2026, Site URL and the signup callback were set to `https://plumcreekgardner.com/portal/` in the hosted project. The previous Site URL was `http://localhost:3000`, with no additional allowed callbacks. Recovery now sends `window.location.origin + "/portal/reset-password/"`; that exact production URL is also allowed in Supabase. Older valid recovery callbacks to `/portal/` are forwarded to the dedicated reset page before Auth consumes their URL fragment. Email confirmation remains enabled.
 
 Save the settings and request a fresh confirmation or reset email from the hosted portal. Previously sent emails retain their original link. If confirmation already succeeded before the localhost redirect, sign in normally instead of signing up again.
 

@@ -99,7 +99,10 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(officers, /Michael Bruna/);
   const portal = await readFile(new URL("../out/portal/index.html", import.meta.url), "utf8");
   assert.match(portal, /Homeowner portal/i);
-  assert.match(portal, /Current email/);
+  assert.match(portal, /Homeowner sign-in/);
+  const resetPassword = await readFile(new URL("../out/portal/reset-password/index.html", import.meta.url), "utf8");
+  assert.match(resetPassword, /Reset your password/);
+  assert.match(resetPassword, /noindex, nofollow/);
   assert.doesNotMatch(portal, /portal_bootstrap_admin|activated_user_id|private\.signup_passcode/);
   const members = await readFile(new URL("../out/members/index.html", import.meta.url), "utf8");
   const admin = await readFile(new URL("../out/admin/index.html", import.meta.url), "utf8");

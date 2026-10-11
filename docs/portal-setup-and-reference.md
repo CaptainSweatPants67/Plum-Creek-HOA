@@ -9,6 +9,7 @@ Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase proj
 | `/board/` | Public Director roster and recorded Board history. Reads published Supabase records, with saved public source as fallback. |
 | `/officers/` | Annual President, Vice President, Secretary and Treasurer roster/history. |
 | `/portal/` | Signup, email confirmation return, login, password recovery, MFA and authorized signup-passcode display. |
+| `/portal/reset-password/` | Dedicated new-password form after recovery, with matching-password confirmation and a fresh-link request for expired or invalid callbacks. |
 | `/members/` | Own current contact details, ownership/co-ownership requests, review status and approved properties. |
 | `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
 
@@ -92,6 +93,8 @@ On October 11, 2026, connected Resend account access was verified and the dedica
 Supabase custom SMTP is enabled with host `smtp.resend.com`, port `465`, username `resend`, and sender **Plum Creek HOA <no-reply@auth.plumcreekgardner.com>**. The user created and saved the credential directly in the dashboards. The Resend key **Plum Creek Supabase Auth SMTP** was checked afterward: Sending access, restricted to `auth.plumcreekgardner.com`. Its token was not printed or committed. The saved minimum interval is five minutes per user, with a global limit of 30 auth emails per hour. Email confirmation and the production Site URL/allowed callback remain enabled and unchanged.
 
 Both confirmation/recovery subjects and HTML bodies were applied through a reviewed CLI config update. The hosted source and previews confirm Plum Creek branding and intact `{{ .ConfirmationURL }}` placeholders. A single user-approved password-reset email was accepted by Supabase and reported **delivered** by Resend. Its sender, recovery content and verification link returning to `https://plumcreekgardner.com/portal/` were checked without following the reset link. No password was changed by the agent. Delivery status confirms recipient-mail-server acceptance; inbox placement and completing the recovery flow were not tested. No separate signup email was sent. Read-only live portal/security checks passed again after the update.
+
+Password recovery now returns to `https://plumcreekgardner.com/portal/reset-password/`, also allowed in Supabase's redirect list. Signup still returns to `/portal/`. Older valid recovery callbacks to `/portal/` are forwarded with their fragment intact before the Auth client starts. The dedicated page waits for Auth initialization and the session rather than depending on the one-time `PASSWORD_RECOVERY` notification. It also supports refresh and existing signed-in users. Browser checks with intercepted Auth responses cover immediate/delayed initialization, legacy callbacks, refresh, password mismatch, update success, expired callbacks with an existing session, and missing sessions. These checks send no real email and change no account.
 
 ## Migration state and validation
 

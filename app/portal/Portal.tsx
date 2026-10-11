@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import type { Session } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import { LeadershipManager } from "./LeadershipManager";
 import { MemberWorkspace } from "./MemberWorkspace";
@@ -13,27 +13,48 @@ type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has
 type Code = { passcode: string; enabled: boolean; updated_at: string };
 
 export function Portal({ view = "portal" }: { view?: "portal" | "members" | "admin" }) {
-  const [client] = useState(getSupabaseBrowserClient);
+  const [client, setClient] = useState<SupabaseClient | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [flags, setFlags] = useState<Flags | null>(null);
   const [code, setCode] = useState<Code | null>(null);
-  const [mode, setMode] = useState<"login" | "signup" | "recovery" | "password">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [factorId, setFactorId] = useState("");
   const [qr, setQr] = useState("");
 
   useEffect(() => {
-    if (!client) return;
+    // Forward older email callbacks before Supabase consumes their URL fragment.
+    const forwardRecovery = () => {
+      const callback = new URLSearchParams(window.location.hash.slice(1));
+      if (callback.get("type") !== "recovery") return false;
+      window.location.replace(`/portal/reset-password/${window.location.search}${window.location.hash}`);
+      return true;
+    };
+    if (forwardRecovery()) return;
+    window.addEventListener("hashchange", forwardRecovery);
+    const client = getSupabaseBrowserClient();
     let active = true;
-    void client.auth.getSession().then(({ data }) => { if (active) setSession(data.session); });
+    if (!client) {
+      void Promise.resolve().then(() => { if (active) setAuthReady(true); });
+      return () => { active = false; window.removeEventListener("hashchange", forwardRecovery); };
+    }
+    void (async () => {
+      const initialized = await client.auth.initialize();
+      const { data } = await client.auth.getSession();
+      if (active) {
+        setClient(client); setSession(data.session); setAuthReady(true);
+        if (initialized.error) setMessage("This email link has expired or is invalid. Please request a new link.");
+      }
+    })();
     const { data } = client.auth.onAuthStateChange((event, next) => {
       setSession(next);
-      if (event === "PASSWORD_RECOVERY") setMode("password");
+      if (event === "PASSWORD_RECOVERY") window.location.assign("/portal/reset-password/");
       if (!next) { setFlags(null); setCode(null); setQr(""); setFactorId(""); }
     });
-    return () => { active = false; data.subscription.unsubscribe(); };
-  }, [client]);
+    return () => { active = false; data.subscription.unsubscribe(); window.removeEventListener("hashchange", forwardRecovery); };
+  }, []);
   useEffect(() => {
     if (!client || !session) return;
     let active = true;
@@ -68,13 +89,9 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
         if (error) throw new Error("Registration could not be completed. Check your signup passcode or contact the HOA.");
         form.reset(); setMessage("Check your email to confirm your account. Registration does not verify property ownership.");
       } else if (mode === "recovery") {
-        const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/portal/` });
+        const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/portal/reset-password/` });
         if (error) throw error;
         setMessage("If an account exists for that email, a password reset link will be sent.");
-      } else if (mode === "password") {
-        const { error } = await client.auth.updateUser({ password });
-        if (error) throw error;
-        form.reset(); setMode("login"); setMessage("Your password has been updated.");
       } else {
         const { error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -135,27 +152,28 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     else setMessage("The signup passcode has been replaced. Select Show to view it.");
   }
 
+  if (!authReady) return <section className="portal-section"><p role="status">Loading your account…</p></section>;
   if (!client) return <section className="portal-section"><p>Portal setup is in progress. Please contact the HOA for access.</p></section>;
   const leadership = flags && (flags.is_admin || flags.is_director || flags.is_officer);
   return <section className="portal-section">
     {message && <p className="portal-notice" role="status">{message}</p>}
-    {(!session || mode === "password") ? <div className="portal-panel">
+    {!session ? <div className="portal-panel">
       <div className="portal-tabs"><button onClick={() => setMode("login")}>Sign in</button><button onClick={() => setMode("signup")}>Create account</button><button onClick={() => setMode("recovery")}>Reset password</button></div>
-      <h2>{mode === "signup" ? "Create your homeowner account" : mode === "recovery" ? "Reset your password" : mode === "password" ? "Choose a new password" : "Sign in"}</h2>
+      <h2>{mode === "signup" ? "Create your homeowner account" : mode === "recovery" ? "Reset your password" : "Sign in"}</h2>
       <form onSubmit={submitAccount} className="portal-form">
-        {mode !== "password" && <label>Current email<input name="email" type="email" autoComplete="email" required /></label>}
+        <label>Current email<input name="email" type="email" autoComplete="email" required /></label>
         {mode !== "recovery" && <label>Password<input name="password" type="password" minLength={mode === "login" ? undefined : 12} autoComplete={mode === "login" ? "current-password" : "new-password"} required /></label>}
         {mode === "signup" && <><label>Homeowner signup passcode<input name="passcode" autoComplete="off" type="password" /></label>
           <p>Ask a Director or Officer for the signup passcode. The designated first administrator can create their initial account without it.</p>
           <p>Email confirmation and separate property approval are required. Historical contact records do not grant access.</p></>}
-        <button type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send reset link" : mode === "password" ? "Update password" : "Sign in"}</button>
+        <button type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send reset link" : "Sign in"}</button>
       </form>
     </div> : <>
       <div className="portal-panel"><div className="portal-heading"><h2>Your account</h2><button onClick={async () => { await client.auth.signOut(); setCode(null); setMessage(""); }}>Sign out</button></div>
         <p>{session.user.email}</p>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
         <p>Property access depends on separately approved ownership requests.</p>
-        <div className="portal-links"><Link href="/members/">My information and properties →</Link>{leadership && <Link href="/admin/">Leadership administration →</Link>}</div>
+        <div className="portal-links"><Link href="/members/">My information and properties →</Link><Link href="/portal/reset-password/">Change your password →</Link>{leadership && <Link href="/admin/">Leadership administration →</Link>}</div>
       </div>
       {leadership && !flags.has_mfa && <div className="portal-panel"><h2>Verify your leadership login</h2><p>MFA is required to view the homeowner signup passcode or manage appointments.</p>
         {!factorId && <button onClick={beginMfa} disabled={busy}>Set up or verify authenticator</button>}
