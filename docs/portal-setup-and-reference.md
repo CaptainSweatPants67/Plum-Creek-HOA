@@ -80,12 +80,12 @@ The existing GitHub integration deploys the `plum-creek-hoa` Cloudflare Worker w
 
 - Local `.env.local` already has the project URL and publishable key and is ignored by Git. `.env.example` lists required variables.
 - The tracked `lib/supabase-public-config.json` contains only the public project URL and modern publishable key for GitHub/Cloudflare builds without a local environment file. Optional `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` build variables override those defaults. Never add a service-role/secret key.
-- In Supabase **Authentication → URL Configuration**, set the final Site URL and allow exact `/portal/` confirmation/recovery URLs for the production domain and localhost. All auth callbacks use `/portal/`.
+- Supabase Site URL and its exact allowed callback are now `https://plumcreekgardner.com/portal/`. The former localhost default and empty callback allowlist caused hosted confirmation links to return to localhost. Both settings were updated and verified October 11, 2026. All auth callbacks use `/portal/`; allow any additional development callback explicitly before using it.
 - Keep confirmation enabled. Live Auth settings confirm email registration is enabled and automatic confirmation is disabled.
 - Configure production SMTP and verify confirmation/recovery delivery before general homeowner rollout. Default Supabase mail is restricted to project-team addresses. [SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp), [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
 - Keep the private schema outside exposed Data API schemas. CAPTCHA/global abuse controls are a production follow-up; the application email limiter is not an IP/global limiter.
 
-The website changes were pushed to GitHub on October 11, 2026, and Cloudflare's Workers Builds check succeeded for commit `1224e97`. The hosted domain, SMTP delivery and the redirect allowlist still need verification before homeowner rollout. No signup email or invitation was sent, and no production Auth account was created. The administrator chooses their own password and confirms their mailbox.
+The website changes were pushed to GitHub on October 11, 2026, and Cloudflare's Workers Builds check succeeded for commit `1224e97`. The user provided the production domain and the Supabase redirect configuration is now verified. A read-only check confirmed the designated administrator's email is already confirmed. No signup email or invitation was sent by the agent, and the agent did not create an Auth account. The administrator chooses their own password and confirms their mailbox. Custom SMTP and end-to-end delivery remain pending: this new free project cannot customize default-provider templates under Supabase's current policy. Prepared Plum Creek templates and the next mail setup are documented in `../supabase/email-templates/README.md`.
 
 ## Migration state and validation
 
