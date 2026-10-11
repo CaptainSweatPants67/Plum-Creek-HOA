@@ -30,6 +30,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -49,3 +50,11 @@ next-env.d.ts
 /Houses Addresses.txt
 /Images/
 /Plum Creek Documents/
+
+# Private HOA handoff/import data and rental documents
+/private-data/
+plum_creek_codex_handoff*.zip
+plum_creek_contacts*.csv
+plum_creek_contact_emails*.csv
+plum_creek_contact_property_links_reference*.csv
+plum_creek_legacy_reference*.csv

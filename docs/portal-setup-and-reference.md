@@ -1,0 +1,115 @@
+# Plum Creek portal setup and table reference
+
+Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase project (`vjkdffiwgpoyrhbivfsa`). The handoff supplies project background; the user's current requests authorize these leadership, registration, member information and administration changes. The original SQL/CSV review remains in `supabase-development-review.md`.
+
+## Pages
+
+| Page | Behavior |
+| --- | --- |
+| `/board/` | Public Director roster and recorded Board history. Reads published Supabase records, with saved public source as fallback. |
+| `/officers/` | Annual President, Vice President, Secretary and Treasurer roster/history. |
+| `/portal/` | Signup, email confirmation return, login, password recovery, MFA and authorized signup-passcode display. |
+| `/members/` | Own current contact details, ownership/co-ownership requests, review status and approved properties. |
+| `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
+
+Private pages export a sign-in shell with `noindex`. Private information loads only through authenticated database operations. UI visibility is not authorization. Browser code uses a modern publishable key; it contains no service-role key.
+
+## Table reference
+
+| Table | Purpose / relationship |
+| --- | --- |
+| `public.leadership_people` | Public display identity, separate from historical household contacts and Auth accounts. |
+| `public.board_member_years` | Person + service year + Director seat/term label; `director`, `historical` or `vacant`. |
+| `public.officer_positions` | President, Vice President, Secretary, Treasurer reference titles. |
+| `public.officer_member_years` | Person + Officer position + service year. Historical changes within a year are preserved. |
+| `private.leadership_account_links` | Explicit, revocable person-to-confirmed-current-account link. Never matched to a historical email automatically. |
+| `private.portal_bootstrap_admin` | One designated first administrator email/person; activation waits for confirmation. The email is configured privately in Supabase and is not committed. |
+| `private.signup_passcode` | Random 24-character registration code and version. Only authorized leadership with MFA can retrieve it. |
+| `private.signup_tickets` | Hashed, email-bound, 10-minute signup tickets, consumed during account creation. |
+| `private.signup_attempts` | Ten code attempts per normalized email per 15-minute window. |
+| `public.portal_account_details` | Member-entered current name, phone and mailing address. Users access only their own row; these fields do not prove ownership. |
+| `private.property_access_requests` | Pending/approved/rejected/revoked requests tied to account/property, with reviewer evidence and verified property-contact association. |
+| `private.leadership_audit` | Protected code-access, leadership, ownership and occupancy audit events. |
+
+```mermaid
+flowchart LR
+  Person[Leadership person] --> Director[Director service year]
+  Person --> Officer[Officer service year]
+  Person --> Link[Confirmed leadership account link]
+  Link --> Auth[Auth account]
+  Auth --> Details[Own current contact information]
+  Auth --> Request[Property verification request]
+  Request --> Property[HOA property / lot]
+  Request --> Approval[Independent staff approval]
+  Approval --> Association[Verified property-contact association]
+```
+
+## Permissions and public history
+
+Publishing a roster is independent of granting login privileges. Privileges require a separately linked confirmed account, enabled appointment and current service dates. People can be Director, Officer, both or neither. Appointment date checks use PostgreSQL `current_date` (database timezone); role endpoints are inclusive. Bootstrap approves only the designated person's current-year Director/Officer records, from confirmation day through December 31. A multi-year public seat label does not automatically extend next year's login privileges.
+
+Directors/Officers with MFA can view the code, review property requests and manage occupancy. System administrator is a separate existing `user_roles` assignment enabling appointment management and code rotation after MFA. Editable metadata never grants privileges. Disabled/expired appointments and revoked links are checked from live records on every protected operation.
+
+The 2026 roster shows Michael Bruna as Director and President, preserving the existing seat label. Laura McKinney remains a Director. No replacement Vice President was supplied, so that office is vacant. Historical rows retain their original titles, including duplicate positions within some years, and grant no privileges. Historical `Board.txt` entries do not establish verified Director appointments.
+
+## First administrator and signup
+
+1. Open `/portal/`, select **Create account**, use the designated current email and choose a password of at least 12 characters. Leave the passcode blank for this designated initial signup only.
+2. Confirm the email, then sign in. Confirmation activates the privately configured administrator link and current-year Director/President assignments.
+3. Set up or verify an authenticator through the MFA panel. Then view the signup passcode and open **Leadership administration**.
+4. Other homeowners register with the passcode, confirm an individual current email, enter contact details on `/members/`, and request property verification.
+5. Other leaders register normally. The administrator explicitly links their confirmed account to a leadership person and approves dated appointments.
+
+The code permits registration only: no automatic ownership or voting eligibility. Direct Auth signup is also guarded by `hoa_enforce_signup_gate` on `auth.users`; bypassing the form cannot bypass that check. The optional `public.hoa_before_user_created` Auth hook shares the validation, but configuring it is not required for the installed trigger guard. Only `supabase_auth_admin` can call that hook interface.
+
+Tickets are bound to email and code version. Rotation invalidates unused tickets and the old code. A spent ticket is removed from Auth metadata; the code is never stored there. The secret is explicitly retrieved into page memory and cleared on sign-out, never added to static HTML, files or URLs. Rotate a shared code to withdraw that knowledge. Existing accounts can still log in/recover passwords after rotation.
+
+## Property review
+
+Separate accounts can be approved for one property, and one account can have multiple properties. Duplicate active requests for one account/property fail. Staff must independently check current ownership and record an evidence source or rejection/revocation reason; they cannot review their own request. Row locks protect decisions and serialize concurrent approvals across properties for one account.
+
+Approval creates a fresh current contact if needed and an explicitly verified property association. It never searches for/promotes a historical email or household match. All 119 original contacts and 136 historical emails remain unverified. Member access checks approval, account/contact association, relationship, verification and effective dates. Portal property-contact ending dates are exclusive, so revoking today removes access immediately, even after same-day approval.
+
+Occupancy changes support unknown / owner occupied / rental / vacant. Property status, timestamp, history and audit commit together; repeated values do not fabricate history. Staff directory historical names remain labeled **Historical / unverified**. Claimed balances and private leases are not included.
+
+Rental storage remains private, with no upload/download UI or permissive Storage policies in this milestone. The initial review covers remaining document consistency, retention, upload/finalization and signed-download work. No lease was uploaded or made public.
+
+## Deployment and email
+
+The site still exports static files for Cloudflare Pages; live roster, member data and Auth use Supabase from the browser.
+
+- Local `.env.local` already has the project URL and publishable key and is ignored by Git. `.env.example` lists required variables.
+- The tracked `lib/supabase-public-config.json` contains only the public project URL and modern publishable key for GitHub/Cloudflare builds without a local environment file. Optional `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` build variables override those defaults. Never add a service-role/secret key.
+- In Supabase **Authentication → URL Configuration**, set the final Site URL and allow exact `/portal/` confirmation/recovery URLs for the production domain and localhost. All auth callbacks use `/portal/`.
+- Keep confirmation enabled. Live Auth settings confirm email registration is enabled and automatic confirmation is disabled.
+- Configure production SMTP and verify confirmation/recovery delivery before general homeowner rollout. Default Supabase mail is restricted to project-team addresses. [SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp), [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+- Keep the private schema outside exposed Data API schemas. CAPTCHA/global abuse controls are a production follow-up; the application email limiter is not an IP/global limiter.
+
+Production website deployment, SMTP delivery and the redirect allowlist were not changed or verified here. No signup email or invitation was sent, and no production Auth account was created. The administrator chooses their own password and confirms their mailbox.
+
+## Migration state and validation
+
+Four additive migrations are installed. They were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later:
+
+| Recorded version | Migration |
+| --- | --- |
+| `20261011090630` | `leadership_and_signup_gate` |
+| `20261011090641` | `public_leadership_roster_seed` |
+| `20261011091457` | `leadership_policy_refinement` |
+| `20261011092105` | `member_information_and_property_review` |
+
+These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
+
+Checks include build/TypeScript, ESLint, rendered HTML, actual migrations executed in isolated PGlite PostgreSQL with Supabase role/claim fixtures, live read-only HTTP roster/private-access and email-confirmation checks, and Supabase advisors. PGlite uses PostgreSQL 18; production uses PostgreSQL 17. A real confirmed-account/MFA browser test remains pending the first administrator's login.
+
+Advisors report no security warnings/errors or remaining multiple-policy warnings. [RLS-without-policy information notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) are intentional for private/helper and locked original tables: access uses narrow authorized functions. Six [missing foreign-key indexes](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys) remain in original contact/rental tables, as recorded in the initial review. New feature foreign keys are indexed. Unused indexes are retained pending real usage.
+
+```powershell
+pnpm lint
+pnpm test
+./tests/review-handoff.test.ps1
+./scripts/review-handoff.ps1 -ArchivePath 'C:/Users/micha/Downloads/plum_creek_codex_handoff.zip'
+node scripts/check-supabase-interface.mjs
+```
+
+The live smoke script reads only and prints no keys, passcodes or private records.

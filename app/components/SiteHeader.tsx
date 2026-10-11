@@ -16,11 +16,14 @@ export function SiteHeader() {
       <nav aria-label="Primary navigation">
         <Link href="/">Home</Link>
         <Link href="/board/">Board</Link>
+        <Link href="/officers/">Officers</Link>
         <Link href="/committees/">Committees</Link>
         <Link href="/events/">Events</Link>
         <Link href="/neighborhood-map/">Map</Link>
         <Link href="/documents/">Documents</Link>
         <Link href="/dues/">Dues</Link>
+        <Link href="/portal/">Homeowner login</Link>
+        <Link href="/members/">Members</Link>
         <Link className="nav-button" href="/contact/">
           Contact
         </Link>

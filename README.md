@@ -27,14 +27,15 @@ pnpm build
 - Neighborhood imagery: `public/`
 - Enhanced HOA tract images: `public/tracts/`
 - Neighborhood map source link: `Info/MapLink.txt`
-- Current Board roster and seat terms: `app/board/page.tsx`
+- Current Board/Officer saved roster and seat terms: `Info/Leadership2026.json`
+- Live Board/Officer roster: Supabase leadership tables, managed through `/admin/`
 - Historical Board records: `Info/Board.txt`
 - Committee roster: `Info/Commitees.txt`
 - Future event dates: `Info/Events.txt`
 
 When replacing a PDF, keep its public filename the same so existing links continue to work. If you add a new document, copy it to `public/documents/` and add a matching entry to the appropriate list at the top of `app/page.tsx`.
 
-Historical Board records use tab-separated columns for year, officer name, and position. The current five-seat roster and staggered seat terms are maintained separately on the Board page.
+Historical Board records use tab-separated columns for year, officer name, and position. The current five-seat roster and annual Officer appointments are maintained separately. Published Supabase records update the public pages in the browser; saved files provide the static fallback.
 
 Committee membership is maintained in `Info/Commitees.txt`. Keep each committee heading on its own line and list each person below it as `Name, Role`. Committee descriptions and responsibilities are maintained on the Committees page.
 
@@ -48,10 +49,16 @@ Add future events to `Info/Events.txt`, one event per line, using tab-separated 
 4. Use `out` as the build output directory.
 5. After the first deployment, attach the HOA domain to the Pages project in Cloudflare.
 
-The project generates a fully static export with no server or database required. Cloudflare rebuilds it automatically whenever the GitHub repository changes.
+The project generates a static export. Public content has a saved fallback; the homeowner portal and live roster connect to Supabase from the browser. Cloudflare rebuilds it automatically whenever the GitHub repository changes. `lib/supabase-public-config.json` supplies this website's public project URL and publishable key, so a GitHub build works without `.env.local`. Optional `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` build variables override those defaults; never use a service-role key.
 
 Optional: add a `NEXT_PUBLIC_SITE_URL` build variable containing the final `https://` HOA domain so social-share image links use the custom domain. Without it, Cloudflare's automatically supplied deployment URL is used.
 
 ## Privacy note
 
 `Houses Addresses.txt` is source material only and is intentionally not copied into the public website.
+
+## Homeowner portal
+
+`/portal/` provides sign-in and passcode-gated registration. `/members/` provides current contact details, ownership requests and approved properties. `/admin/` provides authorized leadership property reviews, occupancy management and system administrator appointment controls. MFA is enforced by the database for privileged actions. Historical homeowner imports do not grant access.
+
+See [portal setup and table reference](docs/portal-setup-and-reference.md) for first-administrator activation, permissions, migrations and deployment configuration, and [the initial Supabase review](docs/supabase-development-review.md) for remaining rental storage work.

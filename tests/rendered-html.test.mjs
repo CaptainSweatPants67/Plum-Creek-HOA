@@ -76,7 +76,7 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(html, /Copy HOA email/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 
-  assert.match(board, /2025–2026 roster/);
+  assert.match(board, /2026.*roster on file/);
   assert.match(board, /roster/);
   assert.match(board, /Laura McKinney/);
   assert.match(board, /Michael Bruna/);
@@ -92,15 +92,33 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(board, /href="\/events\//);
   assert.match(board, /href="\/run-for-board\//);
   assert.match(board, /Board history/);
+  assert.match(board, /href="\/officers\//);
+  const officers = await readFile(new URL("../out/officers/index.html", import.meta.url), "utf8");
+  assert.match(officers, /Officer history/);
+  assert.match(officers, /President/);
+  assert.match(officers, /Michael Bruna/);
+  const portal = await readFile(new URL("../out/portal/index.html", import.meta.url), "utf8");
+  assert.match(portal, /Homeowner portal/i);
+  assert.match(portal, /Current email/);
+  assert.doesNotMatch(portal, /portal_bootstrap_admin|activated_user_id|private\.signup_passcode/);
+  const members = await readFile(new URL("../out/members/index.html", import.meta.url), "utf8");
+  const admin = await readFile(new URL("../out/admin/index.html", import.meta.url), "utf8");
+  assert.match(members, /My information and properties/);
+  assert.match(admin, /HOA administration/);
+  assert.match(members, /noindex, nofollow/);
+  assert.match(admin, /noindex, nofollow/);
+  assert.doesNotMatch(admin, /portal_bootstrap_admin|activated_user_id|private\.signup_passcode/);
 
   assert.match(events, /Upcoming dates/);
-  assert.match(events, /Annual Meeting/);
-  assert.match(events, /Friday, October 9, 2026/);
-  assert.match(events, /6:30 PM/);
-  assert.match(events, /Gardner Senior Center/);
-  assert.match(events, /128 E Park St, Gardner, KS 66030/);
-  assert.match(events, /Open in Google Maps/);
-  assert.match(events, /google\.com\/maps\?q=128%20E%20Park%20St%2C%20Gardner%2C%20KS%2066030/);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  if (today <= "2026-10-09") {
+    assert.match(events, /Annual Meeting/);
+    assert.match(events, /Friday, October 9, 2026/);
+    assert.match(events, /Gardner Senior Center/);
+    assert.match(events, /Open in Google Maps/);
+  } else {
+    assert.doesNotMatch(events, /Friday, October 9, 2026/);
+  }
 
   assert.match(committees, /Architectural Control Committee/);
   assert.match(committees, /Covenants Review Committee/);
