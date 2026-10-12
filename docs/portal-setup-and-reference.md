@@ -27,7 +27,7 @@ Private pages export a sign-in shell with `noindex`. Private information loads o
 | `public.officer_member_years` | Person + Officer position + service year. Historical changes within a year are preserved. |
 | `private.leadership_account_links` | Explicit, revocable person-to-confirmed-current-account link. Never matched to a historical email automatically. |
 | `private.portal_bootstrap_admin` | One designated first administrator email/person; activation waits for confirmation. The email is configured privately in Supabase and is not committed. |
-| `private.signup_passcode` | Random 24-character registration code and version. Only authorized leadership with MFA can retrieve it. |
+| `private.signup_passcode` | Registration code and version. An administrator with MFA can choose 8–64 letters/numbers/hyphens or generate a random 24-character code. Only authorized leadership with MFA can retrieve it. See [signup passcode](signup-passcode.md). |
 | `private.signup_tickets` | Hashed, email-bound, 10-minute signup tickets, consumed during account creation. |
 | `private.signup_attempts` | Ten code attempts per normalized email per 15-minute window. |
 | `public.portal_account_details` | Member-entered current name, phone and mailing address. Users access only their own row; these fields do not prove ownership. |

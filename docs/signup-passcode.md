@@ -1,0 +1,11 @@
+# Homeowner signup passcode
+
+In **HOA administration → Homeowner signup passcode**, a confirmed system administrator with MFA can select **Replace passcode**, type a new code and type it again in **Confirm new signup passcode**. Select **Save new passcode** to replace the current registration code. The saved code and confirmation appear in the same section.
+
+Use 8–64 letters, numbers or hyphens, without spaces. Codes are saved in uppercase; homeowner signup accepts either case and trims leading/trailing spaces. **Show typed passcodes** makes both draft fields readable. **Generate a random code** fills both fields with a cryptographically random 24-character code; it does not save until **Save new passcode** is selected. Cancel discards the draft without changing registration. A failed save keeps the draft for correction or retry and shows the server error beside the form.
+
+Replacing a code invalidates the previous code and outstanding signup tickets. It does not change existing account passwords, ownership approval or member access. Directors and Officers with MFA can view the code; replacement remains restricted to system administrators with MFA. Historical contacts and user metadata cannot grant these permissions.
+
+`replace_homeowner_signup_passcode(p_passcode)` uses a private function with an empty search path, an administrator/MFA check, server-side validation and a row lock. Updating the code/version, invalidating tickets and recording the audit event occur in one transaction, which returns the saved code directly. Audit details contain no passcode. The previous random-rotation RPC remains compatible with already-open browser sessions. Applying the migration does not rotate the active registration code.
+
+Validation: production build and lint; 37 PostgreSQL/static-export tests; isolated desktop/mobile browser checks covering typed/mismatched/invalid input, uppercase normalization, cancellation, random generation, successful save, failed-save draft preservation and show/hide. Hosted SQL verification exercises the actual functions, signup acceptance, old code/ticket invalidation and permission restrictions in a transaction that is rolled back. Browser sessions and Supabase responses are synthetic and fully intercepted; no real homeowner signup, email or password change is performed.

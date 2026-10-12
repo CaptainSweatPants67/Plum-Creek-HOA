@@ -52,6 +52,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec((await migration("member_details_events_and_service_vault")).replace('create extension if not exists supabase_vault with schema vault;',''));
   await db.exec(await migration('household_value_validation'));
   await db.exec(await migration('explicit_occupancy_and_notification_email'));
+  await db.exec(await migration('typed_signup_passcode'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -192,6 +193,32 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     assert.ok((await ticket("rotating@example.test",code)).error);
     code=await scalar("select passcode from private.signup_passcode");
     assert.ok((await ticket("rotating@example.test",code)).ticket);
+  });
+  await t.test("chosen passcodes require administrator MFA, validate without changing tickets, normalize and return the saved code", async () => {
+    const original=await scalar('select row_to_json(c) from private.signup_passcode c');
+    const issued=await ticket('typed-code@example.test');
+    for(const [role,uid,aal] of [['anon',null,null],['authenticated',homeowner,'aal2'],['authenticated',staff,'aal2'],['authenticated',admin,'aal1']]) {
+      await asRole(role,uid,aal,async()=>assert.rejects(db.query('select public.replace_homeowner_signup_passcode($1)',['Fixture-Code-2026']),/permission denied|Administrator login/));
+    }
+    await asRole('authenticated',admin,'aal2',async()=>{
+      for(const invalid of [null,'','short','WITH SPACES','CODE_2026','X'.repeat(65)]) {
+        await assert.rejects(db.query('select public.replace_homeowner_signup_passcode($1)',[invalid]),/8–64/);
+      }
+      await assert.rejects(db.query('select public.replace_homeowner_signup_passcode($1)',[original.passcode.toLowerCase()]),/already in use/);
+    });
+    assert.deepEqual(await scalar('select row_to_json(c) from private.signup_passcode c'),original);
+    assert.ok(await scalar('select exists(select 1 from private.signup_tickets where ticket_hash=encode(sha256(convert_to($1,\'UTF8\')),\'hex\'))',[issued.ticket]));
+    const auditBefore=await scalar("select count(*) from private.leadership_audit where action='signup_code_rotated'");
+    const saved=await asRole('authenticated',admin,'aal2',()=>scalar('select public.replace_homeowner_signup_passcode($1)',['  Fixture-Code-2026  ']));
+    assert.equal(saved.passcode,'FIXTURE-CODE-2026');assert.equal(saved.enabled,true);assert.ok(saved.updated_at);
+    assert.notEqual(await scalar('select version from private.signup_passcode'),original.version);
+    assert.equal(await scalar('select count(*) from private.signup_tickets'),0);
+    assert.equal(await scalar("select count(*) from private.leadership_audit where action='signup_code_rotated'"),auditBefore+1);
+    assert.equal(await scalar("select count(*) from private.leadership_audit where details::text ilike '%fixture-code-2026%'"),0);
+    assert.ok((await ticket('typed-code@example.test',original.passcode)).error);
+    await assert.rejects(newUser('00000000-0000-4000-8000-000000000016','typed-code@example.test',issued.ticket),/passcode is required/);
+    assert.ok((await ticket('typed-code@example.test',' fixture-code-2026 ')).ticket);
+    code=saved.passcode;
   });
   await t.test("overlapping approved Officer terms are rejected; historical duplicates stay readable", async () => {
     await assert.rejects(db.query("insert into public.officer_member_years(person_id,position_code,service_year,starts_on,ends_on,privileges_enabled) values($1,'president',extract(year from current_date),current_date,current_date,true)",[person]),/already has an approved appointment/);

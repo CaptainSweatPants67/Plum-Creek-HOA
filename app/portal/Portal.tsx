@@ -11,25 +11,23 @@ import { StaffWorkspace } from "./StaffWorkspace";
 import { LeadershipRecords } from "./LeadershipRecords";
 import { MemberLibrary } from "./MemberLibrary";
 import { MemberResources } from "./MemberResources";
-import { SectionControls, WorkspaceSection } from "./WorkspaceSection";
+import { SectionControls } from "./WorkspaceSection";
+import { SignupPasscode } from "./SignupPasscode";
 import { RentalWorkspace } from "./RentalWorkspace";
 import { MemberAccessGate } from "./MemberAccessGate";
 import { CalendarManager } from "./CalendarManager";
 import { PropertyHouseholds } from "./PropertyHouseholds";
 
 type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean };
-type Code = { passcode: string; enabled: boolean; updated_at: string };
 
 export function Portal({ view = "portal" }: { view?: "portal" | "members" | "admin" | "leadership" | "documents" }) {
   const [client, setClient] = useState<SupabaseClient | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [flags, setFlags] = useState<Flags | null>(null);
-  const [code, setCode] = useState<Code | null>(null);
   const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [replaceCodePrompt, setReplaceCodePrompt] = useState(false);
   const [rentalRevision, setRentalRevision] = useState(0);
   const [factorId, setFactorId] = useState("");
   const [qr, setQr] = useState("");
@@ -61,7 +59,7 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     const { data } = client.auth.onAuthStateChange((event, next) => {
       setSession(next);
       if (event === "PASSWORD_RECOVERY") window.location.assign("/portal/reset-password/");
-      if (!next) { setFlags(null); setCode(null); setReplaceCodePrompt(false); setQr(""); setFactorId(""); }
+      if (!next) { setFlags(null); setQr(""); setFactorId(""); }
     });
     return () => { active = false; data.subscription.unsubscribe(); window.removeEventListener("hashchange", forwardRecovery); };
   }, []);
@@ -70,8 +68,8 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     let active = true;
     void client.rpc("get_portal_flags").then(({ data, error }) => {
       if (!active) return;
-      if (error) { setFlags(null); setCode(null); setMessage("Portal permissions could not be loaded. Please try again."); }
-      else { const next = data as Flags; setFlags(next); if (!next.can_view_signup_code) setCode(null); }
+      if (error) { setFlags(null); setMessage("Portal permissions could not be loaded. Please try again."); }
+      else { setFlags(data as Flags); }
     });
     return () => { active = false; };
   }, [client, session]);
@@ -143,30 +141,6 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     } catch (error) { setMessage(error instanceof Error ? error.message : "Verification failed."); }
     finally { setBusy(false); }
   }
-  async function showCode() {
-    if (!client) return;
-    setBusy(true); setMessage("");
-    try {
-      const { data, error } = await client.rpc("get_homeowner_signup_passcode");
-      if (error) { setCode(null); throw new Error("Current Director or Officer authorization with MFA is required."); }
-      setCode(data as Code);
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to load passcode."); }
-    finally { setBusy(false); }
-  }
-  async function rotateCode() {
-    if (!client || !replaceCodePrompt || busy) return;
-    setBusy(true); setCode(null); setMessage("");
-    try {
-      const rotated = await client.rpc("rotate_homeowner_signup_passcode");
-      if (rotated.error) throw rotated.error;
-      setReplaceCodePrompt(false);
-      const current = await client.rpc("get_homeowner_signup_passcode");
-      if (current.error) { setMessage("The signup passcode was replaced. Select Show signup passcode to load the new code."); return; }
-      setCode(current.data as Code);
-      setMessage("The signup passcode was replaced. The new code is shown below; the previous code and unused signup tickets no longer work.");
-    } catch (error) { setMessage(error && typeof error === "object" && "message" in error ? String(error.message) : "The passcode could not be replaced. Please try again."); }
-    finally { setBusy(false); }
-  }
 
   if (!authReady) return <section className="portal-section"><p role="status">Loading your account…</p></section>;
   if (!client) return <section className="portal-section"><p>Portal setup is in progress. Please contact the HOA for access.</p></section>;
@@ -185,7 +159,7 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
         <button type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send reset link" : "Sign in"}</button>
       </form>
     </div> : <>
-      <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setCode(null); setMessage(""); }}>Sign out</button></div>
+      <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setMessage(""); }}>Sign out</button></div>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
         <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">My information &amp; properties</Link><Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>{leadership && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{(flags?.is_director || flags?.is_officer) && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
       </div>
@@ -195,11 +169,7 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
         {qr && <><p>Scan this QR code with your authenticator app.</p><Image src={qr} alt="Your authenticator enrollment QR code" width={220} height={220} unoptimized /></>}
         {factorId && <form className="portal-form" onSubmit={verifyMfa}><label>Authenticator code<input name="mfa_code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label><button disabled={busy}>Verify MFA</button></form>}
       </div>}
-      {flags?.can_view_signup_code && view === "admin" && <WorkspaceSection title="Homeowner signup passcode" description="Show or replace the registration code"><p>Share this code with homeowners who want to register. It grants registration only; ownership approval is separate.</p>
-        <div className="portal-actions"><button disabled={busy} onClick={showCode}>Show signup passcode</button>{code && <button onClick={() => setCode(null)}>Hide passcode</button>}{flags.can_manage_leadership && <button disabled={busy} onClick={() => setReplaceCodePrompt(true)}>Replace passcode</button>}</div>
-        {replaceCodePrompt && flags.can_manage_leadership && <div className="portal-notice"><p>Replace the registration code? The previous code and unused signup tickets will stop working. Existing accounts keep their login access.</p><div className="portal-actions"><button disabled={busy} onClick={rotateCode}>{busy ? "Replacing…" : "Confirm replace passcode"}</button><button disabled={busy} onClick={() => setReplaceCodePrompt(false)}>Cancel</button></div></div>}
-        {code && <div className="portal-code"><strong>{code.passcode}</strong><p>{code.enabled ? "Registration code is active." : "Registration code is disabled."} Updated {new Date(code.updated_at).toLocaleString()}.</p></div>}
-      </WorkspaceSection>}
+      {flags?.can_view_signup_code && view === "admin" && <SignupPasscode key={`signup-code-${session.user.id}`} client={client} canReplace={flags.can_manage_leadership} />}
       {view === "members" && <MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
       {view === "documents" && <MemberAccessGate key={`access-${session.user.id}`} client={client}><MemberResources key={`resources-${session.user.id}`} client={client} /><MemberLibrary key={`library-${session.user.id}`} client={client} /></MemberAccessGate>}
       {view === "leadership" && flags?.has_mfa && (flags.is_director || flags.is_officer) && <LeadershipRecords key={`records-${session.user.id}`} client={client} />}
