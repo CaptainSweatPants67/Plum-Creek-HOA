@@ -51,6 +51,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("rental_review_index"));
   await db.exec((await migration("member_details_events_and_service_vault")).replace('create extension if not exists supabase_vault with schema vault;',''));
   await db.exec(await migration('household_value_validation'));
+  await db.exec(await migration('explicit_occupancy_and_notification_email'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -645,6 +646,51 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     await db.query("insert into auth.sessions(id,user_id,aal) values($1,$2,'aal2')",[vaultSession,admin]);
     await asRole('authenticated',admin,'aal2',async()=>{await db.query('select public.unlock_service_vault()');await db.query('select public.remove_service_credential($1)',[credential]);await db.query('select public.lock_service_vault()');assert.equal((await scalar('select public.get_service_vault_status()')).unlocked,false);},vaultClaims());
     assert.equal(await scalar('select count(*) from private.service_credentials where id=$1',[credential]),0);assert.equal(await scalar('select count(*) from vault.secrets'),0);
+  });
+
+  await t.test('separate notification address saves independently of login and consent tracks recipient changes',async()=>{
+    const details={first_name:'Fixture',last_name:'Owner',notification_email:'notices@example.test'};
+    const before=Number(await scalar('select count(*) from private.email_notice_history where user_id=$1',[homeowner]));
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await db.query('select public.save_member_profile($1,true)',[JSON.stringify(details)]);
+      const profile=await scalar('select public.get_member_profile()');assert.equal(profile.details.notification_email,'notices@example.test');assert.equal(profile.email,'homeowner@example.test');assert.equal(profile.notice_consent,true);
+      await assert.rejects(db.query('select public.save_member_profile($1,true)',[JSON.stringify({...details,notification_email:'not an email'})]),/valid email for HOA/);
+      await assert.rejects(db.query("update public.portal_account_details set notification_email='invalid' where user_id=$1",[homeowner]),/check constraint/);
+      await db.query('select public.save_member_profile($1,true)',[JSON.stringify(details)]);
+    });
+    assert.equal(await scalar('select email_at_consent from private.email_notice_preferences where user_id=$1',[homeowner]),'notices@example.test');
+    assert.equal(Number(await scalar('select count(*) from private.email_notice_history where user_id=$1',[homeowner])),before+1);
+    await asRole('authenticated',homeowner,'aal1',()=>db.query('select public.save_member_profile($1,true)',[JSON.stringify({...details,notification_email:'changed-notices@example.test'})]));
+    assert.equal(Number(await scalar('select count(*) from private.email_notice_history where user_id=$1',[homeowner])),before+2);
+    assert.equal(await scalar('select email_at_consent from private.email_notice_preferences where user_id=$1',[homeowner]),'changed-notices@example.test');
+    assert.equal(await scalar('select email from auth.users where id=$1',[homeowner]),'homeowner@example.test');
+    await asRole('authenticated',staff,'aal2',async()=>assert.equal((await scalar('select public.get_staff_workspace()')).requests.find(r=>r.user_id===homeowner).notification_email,'changed-notices@example.test'));
+  });
+  await t.test('occupancy requires one explicit choice, isolates owners and cannot clear a leadership rental flag',async()=>{
+    let chosenRequest;
+    const p='00000000-0000-4000-8000-000000000026';
+    await db.query("insert into public.properties(id,lot_number,street_address) values($1,6,'Occupancy fixture')",[p]);
+    await asRole('anon',null,null,()=>assert.rejects(db.query("select public.request_property_verification_with_occupancy($1,'owner','Fixture','owner_occupied')",[p]),/permission denied/));
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      for(const choice of [null,'','invalid'])await assert.rejects(db.query("select public.request_property_verification_with_occupancy($1,'owner','Fixture',$2)",[p,choice]),/Select whether/);
+      chosenRequest=await scalar("select public.request_property_verification_with_occupancy($1,'owner','Fixture','owner_occupied')",[p]);
+      assert.equal((await scalar('select public.get_rental_workspace()')).properties.find(p=>p.request_id===chosenRequest).occupancy_choice,'owner_occupied');
+      await assert.rejects(db.query('select public.set_property_occupancy_choice($1,null)',[chosenRequest]),/Select whether/);
+      await db.query("select public.set_property_occupancy_choice($1,'rental')",[chosenRequest]);
+      assert.equal((await scalar('select public.get_member_access()')).allowed,false);
+      await db.query("select public.set_property_occupancy_choice($1,'owner_occupied')",[chosenRequest]);
+      assert.equal((await scalar('select public.get_member_access()')).allowed,true);
+      await assert.rejects(db.query("select public.set_property_occupancy_choice($1,'rental')",[administratorRequest]),/own active/);
+    });
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query("select public.set_property_occupancy_choice($1,'rental')",[chosenRequest]),/own active/));
+    await asRole('authenticated',staff,'aal2',()=>db.query("select public.update_property_occupancy($1,'rental','Independent fixture flag')",[p]));
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await db.query("select public.set_property_occupancy_choice($1,'owner_occupied')",[chosenRequest]);
+      const row=(await scalar('select public.get_rental_workspace()')).properties.find(p=>p.request_id===chosenRequest);
+      assert.equal(row.occupancy_choice,'owner_occupied');assert.equal(row.admin_marked_rental,true);assert.equal(row.is_rental,true);assert.equal((await scalar('select public.get_member_access()')).allowed,false);
+    });
+    assert.equal(await scalar('select occupancy_status from public.properties where id=$1',[p]),'rental');
+    await asRole('authenticated',staff,'aal2',async()=>assert.equal((await scalar('select public.get_staff_workspace()')).requests.find(r=>r.id===chosenRequest).occupancy_choice,'owner_occupied'));
   });
 
 });

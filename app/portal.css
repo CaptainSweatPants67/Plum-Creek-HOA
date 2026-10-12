@@ -90,3 +90,7 @@
 .credential-value { margin: 4px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: monospace; }
 .portal-app .leadership-task-tabs { margin: 14px 0; flex-wrap: wrap; }
 .portal-app .calendar-editor { padding: 12px; border: 1px solid var(--line); margin-bottom: 16px; }
+
+.occupancy-choice { margin: 0; border: 1px solid #d6e0e8; border-radius: .35rem; padding: .7rem; min-width: 0; }
+.occupancy-choice legend { font-weight: 650; padding: 0 .3rem; }
+.occupancy-choice .rental-toggle { margin: .45rem 0; font-weight: 500; }

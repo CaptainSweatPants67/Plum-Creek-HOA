@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { displayDate, downloadLibraryPdf, fileSize } from "../../lib/hoa-library";
 import { RENTAL_MAX_BYTES, removeRentalAgreement, rentalError, uploadRentalAgreement, type RentalFile, type RentalProperty } from "../../lib/rental-agreements";
 import { WorkspaceSection } from "./WorkspaceSection";
+import { OccupancyChoice, type HomeOccupancy } from "./OccupancyChoice";
 
 export function RentalWorkspace({ client, staff = false, revision = 0, onChanged }: { client: SupabaseClient; staff?: boolean; revision?: number; onChanged?: () => void }) {
   const [properties, setProperties] = useState<RentalProperty[]>([]);
@@ -41,13 +42,13 @@ export function RentalWorkspace({ client, staff = false, revision = 0, onChanged
     await perform(async () => { const result = await client.rpc("reject_rental_agreement", { p_agreement_id: file.agreement_id, p_note: note }); if (result.error) throw result.error; }, "Agreement marked for replacement. This PDF no longer satisfies the rental requirement.");
   }
   return <WorkspaceSection title={staff ? "Rental agreements & lease dates" : "Rental homes & lease documents"} description={staff ? "Review paperwork and request replacement" : "Required for rental properties to access member information"} defaultOpen={!staff}>
-    <p>{staff ? "Rental owners must provide a PDF and current lease dates. Ownership approval remains a separate review. Downloads are private to authorized owners and leadership with MFA." : "If you rent your home, mark it as a rental and upload the tenant’s agreement with its start and end dates. A current, completed PDF is required for property details and the member library, including bylaws, minutes, and history. You can still update your contact information and upload paperwork here."}</p>
+    <p>{staff ? "Rental owners must provide a PDF and current lease dates. Ownership approval remains a separate review. Downloads are private to authorized owners and leadership with MFA." : "If you rent out or lease your home, select that answer and upload the tenant’s agreement with its start and end dates. A current, completed PDF is required for property details and the member library, including bylaws, minutes, and history. You can still update your contact information and upload paperwork here."}</p>
     <p>PDF only, up to 2 MB. Keep at most three agreements per property request; remove unneeded older files. An expired or future lease does not meet the current-lease requirement.</p>
     {message && <p className="portal-notice" role="status">{message}</p>}
     {!loaded ? <p>Loading rental information…</p> : properties.filter(p => !staff || p.is_rental || p.files.length > 0).length === 0 ? <p>{staff ? "No rental property requests or retained agreements." : "Submit a property verification request to add your home here."}</p> : properties.filter(p => !staff || p.is_rental || p.files.length > 0).map(property => <article className="rental-property" key={property.request_id}>
       <h3>Lot {property.lot_number} — {property.street_address}</h3>
-      <p>{staff && `${property.display_name || "Homeowner"} · `}Ownership: {property.request_status}. {property.is_rental ? property.rental_complete ? "Current rental paperwork complete." : "Rental paperwork required — member information restricted." : "No rental paperwork required."}</p>
-      {!staff && <label className="rental-toggle"><input type="checkbox" checked={property.is_rental} disabled={busy || property.admin_marked_rental} onChange={event => { const checked = event.currentTarget.checked; void perform(async () => { const result = await client.rpc("set_property_rental", { p_request_id: property.request_id, p_is_rental: checked }); if (result.error) throw result.error; }, checked ? "Home marked as a rental. Add its current lease below." : "Rental declaration updated."); }} />I rent this home</label>}
+      <p>{staff && `${property.display_name || "Homeowner"} · `}Ownership: {property.request_status}. {staff && `Member's occupancy answer: ${property.occupancy_choice === "rental" ? "Rents out or leases the home" : property.occupancy_choice === "owner_occupied" ? "Currently lives in the home" : "Not yet selected"}. `} {property.is_rental ? property.rental_complete ? "Current rental paperwork complete." : "Rental paperwork required — member information restricted." : "No rental paperwork required."}</p>
+      {!staff && <OccupancyForm key={`${property.request_id}-${property.occupancy_choice ?? "unanswered"}`} client={client} property={property} busy={busy} perform={perform}/>}
       {!staff && property.admin_marked_rental && <p>The HOA has recorded this property as a rental. Contact leadership if its occupancy status needs correction.</p>}
       {(property.is_rental || property.files.length > 0) && <>
         <ul className="rental-files">{property.files.map(file => <li key={file.id}>
@@ -61,4 +62,16 @@ export function RentalWorkspace({ client, staff = false, revision = 0, onChanged
       </>}
     </article>)}
   </WorkspaceSection>;
+}
+
+function OccupancyForm({ client, property, busy, perform }: { client: SupabaseClient; property: RentalProperty; busy: boolean; perform: (action: () => Promise<void>, success: string) => Promise<void> }) {
+  const [choice,setChoice]=useState<HomeOccupancy|null>(property.occupancy_choice??null);
+  async function save(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await perform(async()=>{
+      const result=await client.rpc("set_property_occupancy_choice",{p_request_id:property.request_id,p_occupancy_choice:choice});
+      if(result.error)throw result.error;
+    },"Home occupancy answer saved. HOA rental records and lease requirements still apply.");
+  }
+  return <form className="portal-form" onSubmit={save}><OccupancyChoice value={choice} onChange={setChoice} disabled={busy}/><button disabled={busy}>Save home occupancy</button></form>;
 }

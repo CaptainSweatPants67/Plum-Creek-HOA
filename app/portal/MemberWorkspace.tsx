@@ -8,6 +8,7 @@ import { RentalWorkspace } from "./RentalWorkspace";
 import { WorkspaceSection } from "./WorkspaceSection";
 import { EmailChange } from "./EmailChange";
 import { PropertyHouseholds } from "./PropertyHouseholds";
+import { OccupancyChoice, type HomeOccupancy } from "./OccupancyChoice";
 import { NOTICE_CONSENT, type MemberDetails, type MemberProfile } from "../../lib/member-profile";
 
 type Property = { id: string; lot_number: number; street_address: string; occupancy_status?: string; relationship?: string; is_rental?: boolean };
@@ -24,9 +25,9 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   const [busy,setBusy]=useState(false);
   const [revision,setRevision]=useState(0);
   const [propertyId,setPropertyId]=useState("");
-  const [declaredRental,setDeclaredRental]=useState(false);
+  const [occupancyChoice,setOccupancyChoice]=useState<HomeOccupancy|null>(null);
   const selectedRental=Boolean(choices.find(p=>p.id===propertyId)?.is_rental);
-  const rental=declaredRental||selectedRental;
+  const rental=occupancyChoice==="rental"||selectedRental;
   useEffect(()=>{
     let active=true;
     void Promise.all([client.rpc("get_member_profile"),client.rpc("get_member_workspace"),client.rpc("get_property_choices")]).then(([profile,member,properties])=>{
@@ -38,7 +39,7 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   },[client,userId,email,revision]);
   async function saveDetails(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
-    const fields=Object.fromEntries(["first_name","last_name","phone","mailing_street","mailing_unit","mailing_city","mailing_state","mailing_postal_code","mailing_country"].map(name=>[name,String(data.get(name)??"").trim()]));
+    const fields=Object.fromEntries(["first_name","last_name","notification_email","phone","mailing_street","mailing_unit","mailing_city","mailing_state","mailing_postal_code","mailing_country"].map(name=>[name,String(data.get(name)??"").trim()]));
     const result=await client.rpc("save_member_profile",{p_details:fields,p_notice_consent:data.has("notice_consent")});
     setBusy(false);setMessage(result.error?result.error.message:"Current contact information saved. Property ownership still requires separate approval.");
     if(!result.error)setRevision((v)=>v+1);
@@ -46,14 +47,15 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   async function submitRequest(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const form=event.currentTarget;const data=new FormData(form);setBusy(true);setMessage("");let saved=false;
     try {
+      if(!occupancyChoice)throw new Error("Select whether you rent out or lease your home, or currently live in it.");
       const file=data.get("lease_pdf") as File;
       const start=String(data.get("lease_start")??"");const end=String(data.get("lease_end")??"");
       if(rental){await validatePdf(file,RENTAL_MAX_BYTES);if(!start||!end||end<start)throw new Error("Enter both lease dates with the end date on or after the start date.");}
-      const result=await client.rpc("request_property_verification",{p_property_id:propertyId,p_relationship:data.get("relationship"),p_note:String(data.get("note")),p_is_rental:rental});
+      const result=await client.rpc("request_property_verification_with_occupancy",{p_property_id:propertyId,p_relationship:data.get("relationship"),p_note:String(data.get("note")),p_occupancy_choice:occupancyChoice});
       if(result.error)throw new Error(result.error.code==="23505"?"A pending or approved request already exists for this property. Use its rental form below.":result.error.message);
       saved=true;
       if(rental)await uploadRentalAgreement(client,result.data as string,file,start,end);
-      form.reset();setPropertyId("");setDeclaredRental(false);setMessage("Your request is pending ownership review by an authorized Director or Officer."+(rental?" Rental paperwork saved; its dates must cover today to access member information.":""));
+      form.reset();setPropertyId("");setOccupancyChoice(null);setMessage("Your request is pending ownership review by an authorized Director or Officer."+(rental?" Rental paperwork saved; its dates must cover today to access member information.":""));
     }catch(error){setMessage((saved?"Property request saved. Complete its rental paperwork below. ":"")+rentalError(error));}
     finally{setBusy(false);if(saved)setRevision(v=>v+1);}
   }
@@ -63,7 +65,10 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
       {!loaded?<p>Loading member information…</p>:<form key={JSON.stringify([details,profile?.notice_consent])} onSubmit={saveDetails} className="portal-form">
         {details?.display_name&&!details.first_name&&<p>Previously saved name: {details.display_name}. Please enter your first and last names below.</p>}
         <div className="portal-form-row"><label>First name<input name="first_name" autoComplete="given-name" maxLength={80} defaultValue={details?.first_name??""} required/></label><label>Last name<input name="last_name" autoComplete="family-name" maxLength={80} defaultValue={details?.last_name??""} required/></label></div>
-        <label>Confirmed login email<input value={profile?.email||email} readOnly type="email"/></label>
+        <label>Login email (username)<input value={profile?.email||email} readOnly type="email" autoComplete="username"/></label>
+        <p>To change your username, use the Login email section below and confirm the change through both inboxes.</p>
+        <label>Email for HOA notifications<input name="notification_email" type="email" autoComplete="email" maxLength={254} defaultValue={details?.notification_email||profile?.email||email} required/></label>
+        <p>This can differ from your login email. Updating it does not change your username.</p>
         <label>Phone<input name="phone" type="tel" autoComplete="tel" maxLength={50} defaultValue={details?.phone??""}/></label>
         {details?.mailing_address&&!details.mailing_street&&<p>Previously saved address: {details.mailing_address}. Enter its separate fields below.</p>}
         <label>Mailing street address<input name="mailing_street" autoComplete="address-line1" maxLength={180} defaultValue={details?.mailing_street??""}/></label>
@@ -71,7 +76,7 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
         <div className="portal-form-row"><label>City<input name="mailing_city" autoComplete="address-level2" maxLength={100} defaultValue={details?.mailing_city??""}/></label><label>State / province<input name="mailing_state" autoComplete="address-level1" maxLength={80} defaultValue={details?.mailing_state??""}/></label><label>ZIP / postal code<input name="mailing_postal_code" autoComplete="postal-code" maxLength={20} defaultValue={details?.mailing_postal_code??""}/></label></div>
         <label>Country<input name="mailing_country" autoComplete="country-name" maxLength={80} defaultValue={details?.mailing_country??"US"}/></label>
         <label className="portal-checkbox notice-consent"><input type="checkbox" name="notice_consent" defaultChecked={profile?.notice_consent??false}/>{NOTICE_CONSENT}</label>
-        <p>Optional. Uncheck and save to withdraw email-notice consent. Your current confirmed login email will be used.</p>
+        <p>Optional. Uncheck and save to withdraw email-notice consent. The email for HOA notifications above is your requested notice address.</p>
         <button disabled={busy}>Save contact information</button>
       </form>}
     </WorkspaceSection>
@@ -81,11 +86,11 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
       <p>Approval provides access to your property information. Formal voting eligibility is handled separately.</p>
     </WorkspaceSection>
     <WorkspaceSection title="Request property verification" description="Add a property and track ownership review" defaultOpen><p>A Director or Officer will check ownership independently. Names or emails in an old contact list are not proof of ownership.</p>
-      <form className="portal-form" onSubmit={submitRequest}><label>HOA property<select name="property_id" required value={propertyId} onChange={event=>{setPropertyId(event.target.value);setDeclaredRental(false);}}><option value="">Select your lot and address</option>{choices.map((property)=><option key={property.id} value={property.id}>Lot {property.lot_number} — {property.street_address}{property.is_rental?" (rental)":""}</option>)}</select></label>
+      <form className="portal-form" onSubmit={submitRequest}><label>HOA property<select name="property_id" required value={propertyId} onChange={event=>{setPropertyId(event.target.value);setOccupancyChoice(null);}}><option value="">Select your lot and address</option>{choices.map((property)=><option key={property.id} value={property.id}>Lot {property.lot_number} — {property.street_address}{property.is_rental?" (rental)":""}</option>)}</select></label>
         <label>Your relationship<select name="relationship"><option value="owner">Owner</option><option value="co_owner">Co-owner</option></select></label>
         <label>Information for the reviewer<textarea name="note" maxLength={1000} placeholder="For example, when you purchased the property. Do not include identity documents or financial details."/></label>
-        <label className="rental-toggle"><input type="checkbox" checked={rental} disabled={selectedRental} onChange={event=>setDeclaredRental(event.target.checked)}/>I rent this home</label>
-        {selectedRental&&<p>The HOA has marked this property as a rental. Lease paperwork is required.</p>}
+        <OccupancyChoice value={occupancyChoice} onChange={setOccupancyChoice} disabled={busy}/>
+        {selectedRental&&<p>The HOA has marked this property as a rental. Lease paperwork is required until leadership updates that record.</p>}
         {rental&&<><div className="portal-form-row"><label>Current lease start date<input name="lease_start" type="date" required/></label><label>Current lease end date<input name="lease_end" type="date" required/></label></div><label>Current rental agreement PDF (maximum 2 MB)<input name="lease_pdf" type="file" accept="application/pdf,.pdf" required/></label><p>A completed PDF with dates covering today is required for member information.</p></>}
         <button disabled={busy||!details}>Submit verification request</button>{!details&&<p>Save your current contact information first.</p>}
       </form>

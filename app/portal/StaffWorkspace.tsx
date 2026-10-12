@@ -3,7 +3,7 @@
 import { useEffect,useState,type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WorkspaceSection } from "./WorkspaceSection";
-type Request={id:string;user_id:string;display_name:string;email:string;phone:string;mailing_address:string;lot_number:number;street_address:string;status:string;relationship:string;request_note:string;review_note:string;email_notice_consent?:boolean;email_notice_consented_at?:string};
+type Request={id:string;user_id:string;display_name:string;email:string;phone:string;mailing_address:string;lot_number:number;street_address:string;status:string;relationship:string;request_note:string;review_note:string;notification_email?:string;occupancy_choice?:string|null;email_notice_consent?:boolean;email_notice_consented_at?:string};
 type Property={id:string;lot_number:number;street_address:string;occupancy_status:string;verified_contacts:{display_name:string;relationship:string}[];historical_contacts:{display_name:string;verification:string}[]};
 type Workspace={requests:Request[];properties:Property[]};
 
@@ -26,7 +26,8 @@ export function StaffWorkspace({client,userId,onChanged}:{client:SupabaseClient;
     <WorkspaceSection title="Property verification reviews" description={workspace ? `${workspace.requests.filter(request=>request.status==='pending').length} pending requests` : "Loading requests"} defaultOpen><p>Check current ownership independently and record the evidence source. A signup passcode or historical contact match is not verification. You cannot review your own request.</p>
       <label className="portal-search">Review status<select value={requestStatus} onChange={event=>setRequestStatus(event.target.value)}><option value="pending">Pending requests</option><option value="approved">Approved access</option><option value="rejected">Rejected requests</option><option value="revoked">Revoked access</option><option value="all">All requests</option></select></label>
       {!workspace?<p>Loading staff information…</p>:visibleRequests.length===0?<p>No requests with this status.</p>:visibleRequests.map((request)=><article className="portal-review-card" key={request.id}>
-        <h3>{request.display_name} — Lot {request.lot_number}</h3><p>{request.street_address}<br/>{request.email} · {request.phone||"No phone provided"}<br/>{request.mailing_address||"No mailing address provided"}</p>
+        <h3>{request.display_name} — Lot {request.lot_number}</h3><p>{request.street_address}<br/>Login email: {request.email}<br/>HOA notifications: {request.notification_email||request.email}<br/>{request.phone||"No phone provided"}<br/>{request.mailing_address||"No mailing address provided"}</p>
+        <p>Member&apos;s occupancy answer: {request.occupancy_choice==="rental"?"Rents out or leases the home":request.occupancy_choice==="owner_occupied"?"Currently lives in the home":"Not yet selected"}</p>
         <p>Email-notice consent: <strong>{request.email_notice_consent?"Consented":"No consent recorded"}</strong>{request.email_notice_consent&&request.email_notice_consented_at?` · ${new Date(request.email_notice_consented_at).toLocaleString()}`:""}</p>
         <p>Requested as {request.relationship.replaceAll("_"," ")} · <strong>{request.status}</strong></p><p>{request.request_note}</p>{request.review_note&&<p>Previous review: {request.review_note}</p>}
         {request.user_id!==userId && ["pending","approved"].includes(request.status)?<form className="portal-form" onSubmit={(event)=>review(event,request.id)}>

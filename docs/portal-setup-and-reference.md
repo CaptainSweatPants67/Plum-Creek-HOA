@@ -106,7 +106,7 @@ Password recovery now returns to `https://plumcreekgardner.com/portal/reset-pass
 
 ## Migration state and validation
 
-Ten migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. Subsequent feature migrations were created and applied with the CLI after checking the pending-file dry run:
+Eleven migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. Subsequent feature migrations were created and applied with the CLI after checking the pending-file dry run:
 
 | Recorded version | Migration |
 | --- | --- |
@@ -120,6 +120,7 @@ Ten migrations are installed. The first four were created with the CLI, then fil
 | `20261012185831` | `rental_review_index` |
 | `20261012190718` | `member_details_events_and_service_vault` |
 | `20261012193614` | `household_value_validation` |
+| `20261012194703` | `explicit_occupancy_and_notification_email` |
 
 These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
 

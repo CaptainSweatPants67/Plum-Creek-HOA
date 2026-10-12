@@ -3,7 +3,7 @@ import { validatePdf } from "./hoa-library";
 
 export const RENTAL_MAX_BYTES = 2_000_000;
 export type RentalFile = { id: string; agreement_id: string; bucket_id: string; storage_path: string; original_filename: string; ready: boolean; reserved_bytes: number; lease_start: string; lease_end: string; agreement_status: string; review_note: string | null; can_remove: boolean };
-export type RentalProperty = { request_id: string; property_id: string; lot_number: number; street_address: string; request_status: string; display_name: string | null; is_rental: boolean; admin_marked_rental: boolean; rental_complete: boolean; files: RentalFile[] };
+export type RentalProperty = { request_id: string; property_id: string; lot_number: number; street_address: string; request_status: string; occupancy_choice: "rental" | "owner_occupied" | null; display_name: string | null; is_rental: boolean; admin_marked_rental: boolean; rental_complete: boolean; files: RentalFile[] };
 
 export function rentalError(error: unknown) { return error && typeof error === "object" && "message" in error ? String(error.message) : "Please try again."; }
 export async function uploadRentalAgreement(client: SupabaseClient, requestId: string, file: File, start: string, end: string) {

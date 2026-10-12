@@ -21,7 +21,7 @@ export function EmailChange({ client, email, pendingEmail, onChanged }: { client
     } catch (error) { setMessage(rentalError(error)); }
     finally { setBusy(false); }
   }
-  return <WorkspaceSection title="Login email" description="Change your confirmed email address"><p>Current login email: <strong>{email}</strong>. This is also the address used for emailed HOA notices when you consent.</p>
+  return <WorkspaceSection title="Login email" description="Change your confirmed email address"><p>Current login email: <strong>{email}</strong>. Your HOA notification email is saved separately in your contact information.</p>
     {pendingEmail && <p className="portal-notice">Awaiting confirmation: {pendingEmail}. Your current email remains in use until the change is confirmed.</p>}
     {message && <p role="status" className="portal-notice">{message}</p>}
     <form className="portal-form" onSubmit={update}><label>New email address<input name="new_email" type="email" autoComplete="email" maxLength={254} required /></label><label>Confirm new email address<input name="confirm_email" type="email" autoComplete="off" maxLength={254} required /></label><button disabled={busy}>{busy ? "Please wait…" : "Send email change confirmations"}</button></form>
