@@ -39,6 +39,8 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("member_information_and_property_review"));
   await db.exec(await migration("leadership_contacts_and_member_documents"));
   await db.exec(await migration("private_member_resources"));
+  await db.exec(await migration("rental_member_access"));
+  await db.exec(await migration("rental_review_index"));
   async function asRole(role, uid, aal, fn) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -251,7 +253,8 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     });
     assert.equal(await scalar("select count(*) from public.property_occupancy_history where property_id=$1",[propertyB]),1);
     assert.equal(await scalar("select count(*) from private.leadership_audit where action='property_occupancy_updated'"),1);
-    await asRole("authenticated",homeowner,"aal2",async()=>assert.equal((await member()).properties[0].occupancy_status,"rental"));
+    await asRole("authenticated",homeowner,"aal2",async()=>{ assert.equal((await member()).properties.length,0); assert.equal((await scalar("select public.get_member_access()")).allowed,false); });
+    await asRole("authenticated",admin,"aal2",()=>db.query("select public.update_property_occupancy($1,'owner_occupied','Synthetic restoration')",[propertyB]));
   });
   await t.test("future Director terms grant nothing; a current Director can review another person's request",async()=>{
     await db.query("insert into public.board_member_years(person_id,service_year,starts_on,ends_on,privileges_enabled) values($1,extract(year from current_date)::int+1,make_date(extract(year from current_date)::int+1,1,1),make_date(extract(year from current_date)::int+1,12,31),true)",[person]);
@@ -384,5 +387,148 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
       await db.query("update public.hoa_service_contacts set archived=true where id=$1",[serviceContact]);
       await assert.rejects(reserve(serviceContact,null),/active contact/);
     });
+  });
+  let lease;
+  const reserveLease=(id=requestB,start='2000-01-01',end='2100-12-31',size=1000,name='lease.pdf')=>scalar('select public.reserve_rental_agreement($1,$2,$3,$4,$5)',[id,name,size,start,end]);
+  const access=()=>scalar('select public.get_member_access()');
+  const removeLease=async(file)=>{await db.query('delete from storage.objects where bucket_id=$1 and name=$2',[file.bucket_id,file.storage_path]);await db.query('select public.remove_rental_agreement($1)',[file.id]);};
+  await t.test('admin rental flag blocks library, history and property details while contact and upload access stay open',async()=>{
+    await asRole('authenticated',admin,'aal2',()=>db.query("select public.update_property_occupancy($1,'rental','Synthetic rental requirement')",[propertyB]));
+    await db.exec("insert into storage.objects(bucket_id,name,metadata) values('hoa-member-governance','plum-creek-bylaws.pdf','{\"size\":3600000,\"mimetype\":\"application/pdf\"}')");
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      assert.equal((await access()).allowed,false);
+      assert.equal((await access()).rental_requirements[0].lot_number,2);
+      assert.equal((await member()).properties.length,1);
+      assert.equal((await member()).properties[0].id,propertyA);
+      assert.equal(await scalar('select count(*) from public.hoa_publications'),0);
+      assert.equal(await scalar('select count(*) from public.hoa_library_files'),0);
+      assert.equal(await scalar("select count(*) from public.board_member_years where record_kind='historical'"),0);
+      assert.equal(await scalar('select count(*) from storage.objects'),0);
+      await assert.rejects(db.query('select public.get_member_leadership_history()'),/rental paperwork required/);
+      await assert.rejects(db.query('select public.set_property_rental($1,false)',[requestB]),/HOA has marked/);
+      await db.query("update public.portal_account_details set phone='555-0102' where user_id=$1",[homeowner]);
+      assert.equal((await scalar('select public.get_rental_workspace()')).properties.length,2);
+      await assert.rejects(db.query('select public.get_staff_rental_workspace()'),/Authorized account/);
+      await assert.rejects(reserveLease(administratorRequest),/own active property/);
+      await assert.rejects(reserveLease(requestB,null),/Both lease dates/);
+      await assert.rejects(reserveLease(requestB,'2100-01-01','2000-01-01'),/Both lease dates/);
+      await assert.rejects(reserveLease(requestB,'2000-01-01','2100-01-01',2000001),/2 MB/);
+      await assert.rejects(reserveLease(requestB,'2000-01-01','2100-01-01',1000,'bad.png'),/2 MB/);
+      await assert.rejects(db.query("insert into public.property_documents(property_id,category,document_title,storage_path) values($1,'lease','Forged','fake.pdf')",[propertyB]),/permission denied/);
+    });
+  });
+  await t.test('rental reservations are private and immutable; only completed matching PDF bytes unlock access',async()=>{
+    await asRole('anon',null,null,async()=>{await assert.rejects(reserveLease(),/permission denied/);await assert.rejects(db.query('select * from public.rental_agreements'),/permission denied/);});
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      lease=await reserveLease();
+      assert.equal(await scalar('select reserved_bytes from public.property_documents where id=$1',[lease.id]),2000000);
+      assert.equal((await access()).allowed,false);
+      await assert.rejects(reserveLease(),/incomplete lease upload/);
+      await assert.rejects(db.query('select public.finish_rental_agreement($1)',[lease.id]),/incomplete/);
+      await assert.rejects(uploadObject({...lease,storage_path:'arbitrary.pdf'}),/row-level security/);
+      await assert.rejects(uploadObject(lease,2000001),/row-level security/);
+      await assert.rejects(uploadObject(lease,1000,'image/png'),/row-level security/);
+      await assert.rejects(db.query('update public.property_documents set ready=true where id=$1',[lease.id]),/permission denied/);
+    });
+    await asRole('authenticated',admin,'aal1',async()=>{
+      assert.equal(await scalar("select count(*) from public.property_documents where id=$1",[lease.id]),0);
+      await assert.rejects(db.query('select public.finish_rental_agreement($1)',[lease.id]),/upload access/);
+      await assert.rejects(uploadObject(lease),/row-level security/);
+    });
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await uploadObject(lease);
+      assert.equal((await access()).allowed,false);
+      await db.query('select public.finish_rental_agreement($1)',[lease.id]);
+      assert.equal((await access()).allowed,true);
+      assert.equal((await member()).properties.length,2);
+      assert.equal(await scalar('select count(*) from public.hoa_publications'),1);
+      assert.equal(await scalar('select count(*) from public.hoa_library_files'),1);
+      assert.equal(await scalar("select count(*) from storage.objects where bucket_id='hoa-member-governance'"),1);
+      assert.ok((await scalar('select public.get_member_leadership_history()')).board.length>5);
+      assert.equal((await db.query("update storage.objects set metadata='{}' where bucket_id=$1 and name=$2 returning id",[lease.bucket_id,lease.storage_path])).rows.length,0);
+      await assert.rejects(db.query('select public.remove_rental_agreement($1)',[lease.id]),/Remove the stored PDF/);
+    });
+    await db.query('update auth.users set email_confirmed_at=null where id=$1',[homeowner]);
+    await asRole('authenticated',homeowner,'aal1',async()=>{await assert.rejects(reserveLease(),/Confirmed account/);assert.equal(await scalar('select count(*) from public.property_documents'),0);});
+    await db.query('update auth.users set email_confirmed_at=now() where id=$1',[homeowner]);
+  });
+  await t.test('expired, future, rejected, missing-object leases restrict access immediately',async()=>{
+    for(const [start,end] of [['2000-01-01','2001-01-01'],['2099-01-01','2100-01-01']]){
+      await db.query('update public.rental_agreements set lease_start=$1,lease_end=$2 where id=$3',[start,end,lease.agreement_id]);
+      await asRole('authenticated',homeowner,'aal1',async()=>assert.equal((await access()).allowed,false));
+    }
+    await db.query("update public.rental_agreements set lease_start='2000-01-01',lease_end='2100-12-31' where id=$1",[lease.agreement_id]);
+    await asRole('authenticated',staff,'aal1',async()=>await assert.rejects(db.query("select public.reject_rental_agreement($1,'Needs correction')",[lease.agreement_id]),/MFA required/));
+    await asRole('authenticated',staff,'aal2',async()=>{assert.equal((await scalar('select public.get_staff_rental_workspace()')).properties.find(p=>p.request_id===requestB).files.length,1);await db.query("select public.reject_rental_agreement($1,'Replace the incorrect dates')",[lease.agreement_id]);});
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await db.query('select public.finish_rental_agreement($1)',[lease.id]);
+      assert.equal((await access()).allowed,false);
+      assert.equal((await scalar('select public.get_rental_workspace()')).properties.find(p=>p.request_id===requestB).files[0].review_note,'Replace the incorrect dates');
+    });
+    await db.query("update public.rental_agreements set agreement_status='received' where id=$1",[lease.agreement_id]);
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await db.query('delete from storage.objects where bucket_id=$1 and name=$2',[lease.bucket_id,lease.storage_path]);
+      assert.equal((await access()).allowed,false);
+      await db.query('select public.remove_rental_agreement($1)',[lease.id]);
+      lease=await reserveLease();await uploadObject(lease);await db.query('select public.finish_rental_agreement($1)',[lease.id]);
+    });
+  });
+  await t.test('pending rental claim does not alter other owners; verified co-owners share leases after their own proof and approval',async()=>{
+    let adminB,otherLease;
+    await asRole('authenticated',admin,'aal1',async()=>{
+      adminB=await scalar("select public.request_property_verification($1,'co_owner','Synthetic co-owner',true)",[propertyB]);
+      assert.equal((await access()).allowed,false);
+      assert.equal(await scalar('select count(*) from public.property_documents where id=$1',[lease.id]),0);
+    });
+    await asRole('authenticated',staff,'aal2',async()=>await assert.rejects(db.query("select public.review_property_access_request($1,'approved','Independent proof')",[adminB]),/current rental agreement/));
+    await asRole('authenticated',admin,'aal1',async()=>{otherLease=await reserveLease(adminB);await uploadObject(otherLease);await db.query('select public.finish_rental_agreement($1)',[otherLease.id]);assert.equal((await access()).allowed,true);});
+    await asRole('authenticated',staff,'aal2',()=>db.query("select public.reject_rental_agreement($1,'Synthetic rejection to check unverified co-owner isolation')",[lease.agreement_id]));
+    await asRole('authenticated',homeowner,'aal1',async()=>assert.equal((await access()).allowed,false));
+    await db.query("update public.rental_agreements set agreement_status='received',notes=null where id=$1",[lease.agreement_id]);
+    await asRole('authenticated',staff,'aal2',()=>db.query("select public.review_property_access_request($1,'approved','Independent synthetic co-owner proof')",[adminB]));
+    await asRole('authenticated',admin,'aal1',async()=>{
+      await removeLease(otherLease);
+      assert.equal((await access()).allowed,true);
+      assert.equal(await scalar('select count(*) from public.property_documents where id=$1',[lease.id]),1);
+      assert.equal((await scalar('select public.get_rental_workspace()')).properties.find(p=>p.request_id===adminB).files[0].can_remove,false);
+      await assert.rejects(db.query('select public.remove_rental_agreement($1)',[lease.id]),/removal access/);
+    });
+    await asRole('authenticated',staff,'aal2',()=>db.query("select public.review_property_access_request($1,'revoked','Synthetic removal')",[adminB]));
+    await asRole('authenticated',admin,'aal1',async()=>assert.equal(await scalar('select count(*) from public.property_documents where id=$1',[lease.id]),0));
+    const propertyC='00000000-0000-4000-8000-000000000023';let reqC;
+    await db.query("insert into public.properties(id,lot_number,street_address) values($1,3,'Test address C')",[propertyC]);
+    await asRole('authenticated',homeowner,'aal1',async()=>{reqC=await scalar("select public.request_property_verification($1,'owner','Self-reported rental',true)",[propertyC]);assert.equal((await access()).allowed,false);});
+    assert.equal(await scalar('select occupancy_status from public.properties where id=$1',[propertyC]),'unknown');
+    await asRole('authenticated',admin,'aal1',async()=>assert.equal((await access()).allowed,true));
+    await asRole('authenticated',homeowner,'aal1',()=>db.query('select public.set_property_rental($1,false)',[reqC]));
+  });
+  await t.test('lease retention, rental budget and shared project reservation limit cannot be bypassed',async()=>{
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      const second=await reserveLease();await uploadObject(second);await db.query('select public.finish_rental_agreement($1)',[second.id]);
+      const third=await reserveLease();await uploadObject(third);await db.query('select public.finish_rental_agreement($1)',[third.id]);
+      await assert.rejects(reserveLease(),/at most three/);await removeLease(second);await removeLease(third);
+    });
+    await db.query("insert into public.property_documents(property_id,category,document_title,storage_bucket,storage_path,reserved_bytes) select $1,'lease','Budget fixture','hoa-rental-agreements','quota-'||n||'.pdf',2000000 from generate_series(1,125) n",[propertyB]);
+    await asRole('authenticated',homeowner,'aal1',async()=>await assert.rejects(reserveLease(),/250 MB rental document budget/));
+    await db.query("delete from public.property_documents where document_title='Budget fixture'");
+    const existingPending=Number(await scalar('select private.pending_storage_bytes()'));
+    const existingStored=Number(await scalar("select coalesce(sum((metadata->>'size')::bigint),0) from storage.objects"));
+    await db.query("insert into storage.objects(bucket_id,name,metadata) values('hoa-private-documents','rental-quota-test.pdf',$1)",[JSON.stringify({size:800000000-existingPending-existingStored-2500000})]);
+    let libraryPending;
+    await asRole('authenticated',staff,'aal2',async()=>{libraryPending=await reserve(null,publishedPost,1);});
+    await asRole('authenticated',homeowner,'aal1',async()=>await assert.rejects(reserveLease(),/Project storage is near/));
+    await asRole('authenticated',staff,'aal2',()=>db.query('select public.remove_hoa_file($1)',[libraryPending.id]));
+    let incomplete;
+    await asRole('authenticated',homeowner,'aal1',async()=>{incomplete=await reserveLease();await assert.rejects(reserveLease(administratorRequest),/own active/);});
+    await asRole('authenticated',staff,'aal2',async()=>await assert.rejects(reserve(null,publishedPost,1),/Project storage is near/));
+    await asRole('authenticated',homeowner,'aal1',()=>removeLease(incomplete));
+    await db.query("delete from storage.objects where name='rental-quota-test.pdf'");
+    await asRole('authenticated',staff,'aal2',()=>db.query("select public.review_property_access_request($1,'revoked','Synthetic rental owner ended')",[requestB]));
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      assert.equal(await scalar('select count(*) from public.property_documents where id=$1',[lease.id]),0);
+      assert.equal(await scalar("select count(*) from storage.objects where bucket_id='hoa-rental-agreements'"),0);
+      await assert.rejects(reserveLease(),/own active property/);
+    });
+    await asRole('authenticated',staff,'aal2',async()=>assert.equal((await scalar('select public.get_staff_rental_workspace()')).properties.find(p=>p.request_id===requestB).files[0].id,lease.id));
   });
 });

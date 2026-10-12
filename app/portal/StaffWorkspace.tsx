@@ -7,18 +7,18 @@ type Request={id:string;user_id:string;display_name:string;email:string;phone:st
 type Property={id:string;lot_number:number;street_address:string;occupancy_status:string;verified_contacts:{display_name:string;relationship:string}[];historical_contacts:{display_name:string;verification:string}[]};
 type Workspace={requests:Request[];properties:Property[]};
 
-export function StaffWorkspace({client,userId}:{client:SupabaseClient;userId:string}){
+export function StaffWorkspace({client,userId,onChanged}:{client:SupabaseClient;userId:string;onChanged?:()=>void}){
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [message,setMessage]=useState("");const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);const [search,setSearch]=useState("");
   const [requestStatus,setRequestStatus]=useState("pending");
   useEffect(()=>{let active=true;void client.rpc("get_staff_workspace").then(({data,error})=>{if(!active)return;if(error){setWorkspace(null);setMessage("Serving Director or Officer authorization with MFA is required.");}else setWorkspace(data as Workspace);});return()=>{active=false;};},[client,revision]);
   async function review(event:FormEvent<HTMLFormElement>,requestId:string){event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
     const result=await client.rpc("review_property_access_request",{p_request_id:requestId,p_decision:data.get("decision"),p_note:String(data.get("review_note")).trim()});
-    setBusy(false);setMessage(result.error?result.error.message:"Request reviewed. Property access has been updated.");if(!result.error)setRevision((v)=>v+1);
+    setBusy(false);setMessage(result.error?result.error.message:"Request reviewed. Property access has been updated.");if(!result.error){setRevision((v)=>v+1);onChanged?.();}
   }
   async function occupancy(event:FormEvent<HTMLFormElement>,propertyId:string){event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
     const result=await client.rpc("update_property_occupancy",{p_property_id:propertyId,p_status:data.get("status"),p_note:String(data.get("note"))});
-    setBusy(false);setMessage(result.error?result.error.message:"Occupancy saved. Changes are recorded in property history.");if(!result.error)setRevision((v)=>v+1);
+    setBusy(false);setMessage(result.error?result.error.message:"Occupancy saved. Changes are recorded in property history.");if(!result.error){setRevision((v)=>v+1);onChanged?.();}
   }
   const visibleRequests=workspace?.requests.filter(request=>requestStatus==="all"||request.status===requestStatus)??[];
   return <>

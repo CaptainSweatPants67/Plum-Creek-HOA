@@ -30,6 +30,9 @@ const secret=await client.rpc("get_homeowner_signup_passcode");
 assert.ok(secret.error,"Public access to the signup code must be denied");
 const libraryUsage=await client.rpc("get_hoa_library_usage");
 assert.ok(libraryUsage.error,"Public access to library management must be denied");
+for(const name of ['get_member_access','get_rental_workspace','get_staff_rental_workspace']) {
+  assert.ok((await client.rpc(name)).error,`Anonymous access must be denied: ${name}`);
+}
 const settingsResponse=await fetch(`${url}/auth/v1/settings`,{headers:{apikey:key}});
 assert.equal(settingsResponse.status,200);
 const settings=await settingsResponse.json();

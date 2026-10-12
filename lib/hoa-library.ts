@@ -41,7 +41,7 @@ export async function uploadLibraryPdf(client: SupabaseClient, file: File, optio
   const finished = await client.rpc("finish_hoa_file", { p_id: entry.id });
   if (finished.error) throw new Error(`The PDF was uploaded but could not be completed: ${finished.error.message}. Remove the incomplete entry and try again.`);
 }
-export async function downloadLibraryPdf(client: SupabaseClient, file: LibraryFile) {
+export async function downloadLibraryPdf(client: SupabaseClient, file: Pick<LibraryFile, "bucket_id" | "storage_path" | "original_filename">) {
   // Authenticated download rechecks access; no public or shareable signed URLs.
   const { data, error } = await client.storage.from(file.bucket_id).download(file.storage_path);
   if (error) throw error;

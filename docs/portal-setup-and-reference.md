@@ -10,7 +10,7 @@ Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase proj
 | `/officers/` | Current public President, Vice President, Secretary and Treasurer appointments. |
 | `/portal/` | Signup, email confirmation return, login, password recovery, MFA and member navigation. |
 | `/portal/reset-password/` | Dedicated new-password form after recovery, with matching-password confirmation and a fresh-link request for expired or invalid callbacks. |
-| `/members/` | Own current contact details, ownership/co-ownership requests, review status and approved properties. |
+| `/members/` | Own current contact details, property requests, approved properties, rental PDF uploads and current tenant lease dates. |
 | `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
 | `/leadership/` | Current Directors/Officers with MFA maintain service contacts, attach contracts, and publish or draft minutes and announcements. |
 | `/member-documents/` | Confirmed signed-in accounts download bylaws, search Board/Officer history, and read published minutes/announcements and their PDFs. |
@@ -81,7 +81,7 @@ Approval creates a fresh current contact if needed and an explicitly verified pr
 
 Occupancy changes support unknown / owner occupied / rental / vacant. Property status, timestamp, history and audit commit together; repeated values do not fabricate history. Staff directory historical names remain labeled **Historical / unverified**. Claimed balances and private leases are not included.
 
-Rental storage remains private, with no upload/download UI or permissive Storage policies in this milestone. The initial review covers remaining document consistency, retention, upload/finalization and signed-download work. No lease was uploaded or made public.
+Rental homes now require a completed agreement PDF and lease dates covering today to access property details and member resources. Both homeowner declarations and staff-recorded rental occupancy enforce this requirement. Contact and upload forms remain available while restricted. New agreements use the private `hoa-rental-agreements` bucket; original document records remain locked. See [rental member access](rental-member-access.md) for permissions, limits, retention and verification.
 
 ## Deployment and email
 
@@ -106,7 +106,7 @@ Password recovery now returns to `https://plumcreekgardner.com/portal/reset-pass
 
 ## Migration state and validation
 
-Six migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. The contacts/documents migration was created and applied with the CLI; its dry run showed only that pending file:
+Eight migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. Subsequent feature migrations were created and applied with the CLI after checking the pending-file dry run:
 
 | Recorded version | Migration |
 | --- | --- |
@@ -116,6 +116,8 @@ Six migrations are installed. The first four were created with the CLI, then fil
 | `20261011092105` | `member_information_and_property_review` |
 | `20261011214844` | `leadership_contacts_and_member_documents` |
 | `20261012172745` | `private_member_resources` |
+| `20261012183531` | `rental_member_access` |
+| `20261012185831` | `rental_review_index` |
 
 These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
 

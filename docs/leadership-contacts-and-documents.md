@@ -4,7 +4,7 @@ Open `/leadership/` after signing in as a currently appointed Director or Office
 
 **Contacts & contracts** is a private rolodex. Create or edit a company/person, enter any purpose, and keep contact person, email, phone, website, address and notes on its card. Search matches purposes and contact details. Archive obsolete contacts to hide them from the active list while retaining their contracts. Open a card and choose **Add a contract PDF**; contract titles and optional start/end dates help distinguish successive agreements. These service contacts never grant homeowner access or alter historical household records.
 
-**Minutes & announcements** supports text, PDF attachments, or both. Choose a date and title, write a summary and check **Publish for signed-in members**, or leave it unchecked to save a private draft. Edit an update to publish or unpublish it. New posts with attachments are kept as drafts until the initial attachment finishes. Additional PDFs can be attached later. Members read published posts at `/member-documents/`, linked from their account, filter by minutes/announcements, search updates, and download a PDF on demand. Readers need a confirmed, non-anonymous account; a separate property approval is not required for the member library.
+**Minutes & announcements** supports text, PDF attachments, or both. Choose a date and title, write a summary and check **Publish for signed-in members**, or leave it unchecked to save a private draft. Edit an update to publish or unpublish it. New posts with attachments are kept as drafts until the initial attachment finishes. Additional PDFs can be attached later. Members read published posts at `/member-documents/`, linked from their account, filter by minutes/announcements, search updates, and download a PDF on demand. Readers need a confirmed, non-anonymous account and current paperwork for any active rental property request. A separate ownership approval is not required for the library; see [rental member access](rental-member-access.md).
 
 ## Upload limits and storage planning
 
@@ -16,7 +16,7 @@ The verified organization has one project, is on the free plan, and had zero sto
 | Minutes or announcement PDF | 1 MB (1,000,000 bytes) | Confirmed signed-in account while the update is published |
 | Entire new library | 500 MB (500,000,000 bytes), including upload reservations | Managed by Directors/Officers |
 
-The conservative library budget leaves about half of the free file allowance available. Upload reservations also stop when observed project storage plus outstanding uploads would exceed 800 MB, leaving additional project headroom. This cannot guarantee remaining on Free indefinitely: future organization projects, platform pricing changes, database growth, bandwidth and manually administered uploads must still be monitored in Supabase's usage dashboard.
+The library retains its 500 MB budget. Rental agreements have a separate 250 MB budget, and existing private bylaws use about 3.8 MB. Together these planned allocations total about 753.8 MB. Both features stop new reservations when observed project storage plus outstanding uploads would exceed 800 MB. This cannot guarantee remaining on Free indefinitely: future organization projects, platform pricing changes, database growth, bandwidth and manually administered uploads must still be monitored in Supabase's usage dashboard.
 
 Illustrative storage calculations, assuming no removals:
 
