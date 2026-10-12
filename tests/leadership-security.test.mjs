@@ -53,6 +53,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration('household_value_validation'));
   await db.exec(await migration('explicit_occupancy_and_notification_email'));
   await db.exec(await migration('typed_signup_passcode'));
+  await db.exec(await migration('passcode_ticket_cleanup_safeupdate'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -219,6 +220,20 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     await assert.rejects(newUser('00000000-0000-4000-8000-000000000016','typed-code@example.test',issued.ticket),/passcode is required/);
     assert.ok((await ticket('typed-code@example.test',' fixture-code-2026 ')).ticket);
     code=saved.passcode;
+  });
+  await t.test("passcode cleanup meets API safeupdate rules and retains tickets for the current version", async () => {
+    // PGlite does not ship the API's safeupdate module. Enforce its WHERE rule
+    // against the effective function, then exercise that statement with fixtures.
+    const body=await scalar("select prosrc from pg_proc where oid='private.replace_signup_passcode(text)'::regprocedure");
+    const cleanup=body.match(/delete\s+from\s+private\.signup_tickets\b[^;]*;/i)?.[0];
+    assert.ok(cleanup);assert.match(cleanup,/\bwhere\b/i);
+    const current=await scalar('select version from private.signup_passcode');
+    const obsolete='00000000-0000-4000-8000-000000000099';
+    await db.exec('create temporary table cleanup_fixture(passcode_version uuid not null)');
+    await db.query('insert into cleanup_fixture values($1),($2)',[current,obsolete]);
+    await db.exec(cleanup.replace('private.signup_tickets','cleanup_fixture').replace('v_code.version',`'${current}'::uuid`));
+    assert.deepEqual((await db.query('select passcode_version from cleanup_fixture')).rows,[{passcode_version:current}]);
+    await db.exec('drop table cleanup_fixture');
   });
   await t.test("overlapping approved Officer terms are rejected; historical duplicates stay readable", async () => {
     await assert.rejects(db.query("insert into public.officer_member_years(person_id,position_code,service_year,starts_on,ends_on,privileges_enabled) values($1,'president',extract(year from current_date),current_date,current_date,true)",[person]),/already has an approved appointment/);
