@@ -12,6 +12,8 @@ Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase proj
 | `/portal/reset-password/` | Dedicated new-password form after recovery, with matching-password confirmation and a fresh-link request for expired or invalid callbacks. |
 | `/members/` | Own current contact details, ownership/co-ownership requests, review status and approved properties. |
 | `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
+| `/leadership/` | Current Directors/Officers with MFA maintain service contacts, attach contracts, and publish or draft minutes and announcements. |
+| `/member-documents/` | Confirmed signed-in accounts read published minutes/announcements and download their PDFs. |
 
 Private pages export a sign-in shell with `noindex`. Private information loads only through authenticated database operations. UI visibility is not authorization. Browser code uses a modern publishable key; it contains no service-role key.
 
@@ -98,7 +100,7 @@ Password recovery now returns to `https://plumcreekgardner.com/portal/reset-pass
 
 ## Migration state and validation
 
-Four additive migrations are installed. They were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later:
+Five additive migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. The contacts/documents migration was created and applied with the CLI; its dry run showed only that pending file:
 
 | Recorded version | Migration |
 | --- | --- |
@@ -106,12 +108,15 @@ Four additive migrations are installed. They were created with the CLI, then fil
 | `20261011090641` | `public_leadership_roster_seed` |
 | `20261011091457` | `leadership_policy_refinement` |
 | `20261011092105` | `member_information_and_property_review` |
+| `20261011214844` | `leadership_contacts_and_member_documents` |
 
 These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
 
 Checks include build/TypeScript, ESLint, rendered HTML, actual migrations executed in isolated PGlite PostgreSQL with Supabase role/claim fixtures, live read-only HTTP roster/private-access and email-confirmation checks, and Supabase advisors. PGlite uses PostgreSQL 18; production uses PostgreSQL 17. A real confirmed-account/MFA browser test remains pending the first administrator's login.
 
-Advisors report no security warnings/errors or remaining multiple-policy warnings. [RLS-without-policy information notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) are intentional for private/helper and locked original tables: access uses narrow authorized functions. Six [missing foreign-key indexes](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys) remain in original contact/rental tables, as recorded in the initial review. New feature foreign keys are indexed. Unused indexes are retained pending real usage.
+The contacts/documents update introduced no new security advisor findings. The baseline has a leaked-password-protection warning (the free plan does not include that feature). [RLS-without-policy information notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) are intentional for private/helper and locked original tables: access uses narrow authorized functions. Original contact/rental foreign-key index findings are recorded in the initial review. New feature foreign keys are indexed. Unused indexes are retained pending real usage.
+
+See [contacts and documents guide](leadership-contacts-and-documents.md) for access, upload limits, storage math and verification details.
 
 ```powershell
 pnpm lint

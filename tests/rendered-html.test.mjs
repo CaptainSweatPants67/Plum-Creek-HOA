@@ -108,6 +108,13 @@ test("exports the Plum Creek community pages", async () => {
   const admin = await readFile(new URL("../out/admin/index.html", import.meta.url), "utf8");
   assert.match(members, /My information and properties/);
   assert.match(admin, /HOA administration/);
+  const leadership = await readFile(new URL("../out/leadership/index.html", import.meta.url), "utf8");
+  const memberDocuments = await readFile(new URL("../out/member-documents/index.html", import.meta.url), "utf8");
+  assert.match(leadership, /Officer &amp; Director workspace/);
+  assert.match(leadership, /noindex, nofollow/);
+  assert.match(memberDocuments, /Minutes &amp; announcements/);
+  assert.match(memberDocuments, /noindex, nofollow/);
+  assert.doesNotMatch(leadership, /Private notes|service_contacts.*email|storage_path/);
   assert.match(members, /noindex, nofollow/);
   assert.match(admin, /noindex, nofollow/);
   assert.doesNotMatch(admin, /portal_bootstrap_admin|activated_user_id|private\.signup_passcode/);

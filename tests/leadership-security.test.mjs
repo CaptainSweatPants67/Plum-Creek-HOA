@@ -23,7 +23,11 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}')$$;
     grant usage on schema auth,public to anon,authenticated,supabase_auth_admin;
     grant execute on all functions in schema auth to anon,authenticated;
-    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);`);
+    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,metadata jsonb,unique(bucket_id,name));
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to anon,authenticated;
+    grant select,insert,update,delete on storage.objects to anon,authenticated;`);
   await db.exec((await read("supabase/reference/plum_creek_supabase_schema.sql")).replace("create extension if not exists pgcrypto;", ""));
   await db.exec(await read("supabase/reference/plum_creek_contact_import_setup.sql"));
   await db.exec(`grant all on all tables in schema public to anon,authenticated;
@@ -33,6 +37,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("public_leadership_roster_seed"));
   await db.exec(await migration("leadership_policy_refinement"));
   await db.exec(await migration("member_information_and_property_review"));
+  await db.exec(await migration("leadership_contacts_and_member_documents"));
   async function asRole(role, uid, aal, fn) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -223,5 +228,115 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     await asRole("authenticated",homeowner,"aal2",async()=>assert.equal((await member()).properties.length,2));
     await asRole("authenticated",admin,"aal2",async()=>assert.equal((await member()).properties.length,1));
     assert.equal(await scalar("select count(distinct contact_id) from public.property_contacts where property_id=$1 and ownership_verified_at is not null and ended_on is null",[propertyA]),2);
+  });
+  let serviceContact, publishedPost, draftPost, contractFile, minutesFile, unfinishedFile;
+  const reserve = (contactId,postId,size=1000,title="Test PDF",name="test.pdf") => scalar("select to_jsonb(public.reserve_hoa_file($1,$2,$3,$4,$5))",[contactId,postId,title,name,size]);
+  const uploadObject = (file,size=1000,mime="application/pdf") => db.query("insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)",[file.bucket_id,file.storage_path,JSON.stringify({size,mimetype:mime})]);
+  await t.test("members, forged metadata, anonymous and unconfirmed accounts cannot create contacts or publish",async()=>{
+    await asRole("anon",null,null,async()=>{
+      await assert.rejects(db.query("select * from public.hoa_publications"),/permission denied/);
+      assert.equal(await scalar("select count(*) from storage.objects"),0);
+    });
+    for(const [id,aal] of [[homeowner,"aal2"],[staff,"aal1"]]) await asRole("authenticated",id,aal,async()=>{
+      await assert.rejects(db.query("insert into public.hoa_service_contacts(name,purpose) values('Fake vendor','Anything')"),/row-level security/);
+      await assert.rejects(db.query("insert into public.hoa_publications(kind,title) values('announcement','Fake update')"),/row-level security/);
+      await assert.rejects(db.query("select public.get_hoa_library_usage()"),/MFA required/);
+      await assert.rejects(reserve(null,propertyA),/MFA required/);
+    });
+  });
+  await t.test("serving Director can create a custom-purpose contact, edit it, and publish or save a draft",async()=>{
+    await asRole("authenticated",staff,"aal2",async()=>{
+      serviceContact=await scalar("insert into public.hoa_service_contacts(name,purpose,notes,created_by) values('Pond Specialist','Custom pond service','Private notes',$1) returning id",[homeowner]);
+      assert.equal(await scalar("select created_by from public.hoa_service_contacts where id=$1",[serviceContact]),staff);
+      await db.query("update public.hoa_service_contacts set phone='555-0101',purpose='Mowing and ponds' where id=$1",[serviceContact]);
+      publishedPost=await scalar("insert into public.hoa_publications(kind,title,body,published) values('minutes','Meeting minutes','Member-readable summary',true) returning id");
+      draftPost=await scalar("insert into public.hoa_publications(kind,title,body,published) values('announcement','Draft announcement','Unpublished private text',false) returning id");
+      assert.equal(await scalar("select count(*) from public.hoa_service_contacts"),1);
+    });
+    await asRole("authenticated",homeowner,"aal2",async()=>{
+      assert.equal(await scalar("select count(*) from public.hoa_service_contacts"),0);
+      assert.equal(await scalar("select count(*) from public.hoa_publications"),1);
+      assert.equal(await scalar("select title from public.hoa_publications"),"Meeting minutes");
+      assert.equal((await db.query("update public.hoa_publications set title='Hacked' returning id")).rows.length,0);
+    });
+    const pending="00000000-0000-4000-8000-000000000011";
+    await asRole("authenticated",pending,"aal2",async()=>assert.equal(await scalar("select count(*) from public.hoa_publications"),0));
+    await db.query("update auth.users set is_anonymous=true where id=$1",[homeowner]);
+    await asRole("authenticated",homeowner,"aal2",async()=>assert.equal(await scalar("select count(*) from public.hoa_publications"),0));
+    await db.query("update auth.users set is_anonymous=false where id=$1",[homeowner]);
+  });
+  await t.test("uploads reserve full slots, enforce PDF limits, reject arbitrary paths, and verify actual bytes",async()=>{
+    await asRole("authenticated",staff,"aal2",async()=>{
+      await assert.rejects(reserve(serviceContact,null,2000001),/allowed upload size/);
+      await assert.rejects(reserve(null,publishedPost,1000001),/allowed upload size/);
+      await assert.rejects(reserve(serviceContact,null,1000,"Image","photo.png"),/Only PDF/);
+      await assert.rejects(db.query("insert into storage.objects(bucket_id,name,metadata) values('hoa-contracts','arbitrary.pdf','{\"size\":1,\"mimetype\":\"application/pdf\"}')"),/row-level security/);
+      contractFile=await reserve(serviceContact,null);
+      assert.equal(contractFile.reserved_bytes,2000000);
+      assert.equal((await scalar("select public.get_hoa_library_usage()")).allocated_bytes,2000000);
+      await assert.rejects(uploadObject(contractFile,2000001),/row-level security/);
+      await assert.rejects(uploadObject(contractFile,1000,"image/png"),/row-level security/);
+      await uploadObject(contractFile);
+      await db.query("select public.finish_hoa_file($1)",[contractFile.id]);
+      assert.equal((await scalar("select public.get_hoa_library_usage()")).allocated_bytes,1000);
+      unfinishedFile=await reserve(null,publishedPost,2000,"Incomplete PDF");
+      await uploadObject(unfinishedFile,1000);
+      await assert.rejects(db.query("select public.finish_hoa_file($1)",[unfinishedFile.id]),/incomplete or does not match/);
+      minutesFile=await reserve(null,publishedPost);
+      await uploadObject(minutesFile);
+      await db.query("select public.finish_hoa_file($1)",[minutesFile.id]);
+      const draftFile=await reserve(null,draftPost);
+      await uploadObject(draftFile);
+      await db.query("select public.finish_hoa_file($1)",[draftFile.id]);
+      assert.equal(await scalar("select ready from public.hoa_library_files where id=$1",[unfinishedFile.id]),false);
+    });
+  });
+  await t.test("member downloads allow only finished published PDFs; contracts, drafts and incomplete PDFs stay private",async()=>{
+    await asRole("anon",null,null,async()=>assert.equal(await scalar("select count(*) from storage.objects"),0));
+    await asRole("authenticated",homeowner,"aal1",async()=>{
+      assert.equal(await scalar("select count(*) from public.hoa_library_files"),1);
+      assert.equal(await scalar("select count(*) from storage.objects"),1);
+      await assert.rejects(uploadObject(contractFile),/row-level security/);
+      assert.equal((await db.query("delete from storage.objects returning id")).rows.length,0);
+    });
+    await asRole("authenticated",staff,"aal2",async()=>db.query("update public.hoa_publications set published=false where id=$1",[publishedPost]));
+    await asRole("authenticated",homeowner,"aal2",async()=>{
+      assert.equal(await scalar("select count(*) from public.hoa_library_files"),0);
+      assert.equal(await scalar("select count(*) from storage.objects"),0);
+    });
+    await asRole("authenticated",staff,"aal2",async()=>db.query("update public.hoa_publications set published=true where id=$1",[publishedPost]));
+  });
+  await t.test("library budget cannot be bypassed with small declarations; removal requires deleting the physical object first",async()=>{
+    await asRole("authenticated",staff,"aal2",async()=>{
+      await assert.rejects(db.query("delete from public.hoa_library_files where id=$1",[contractFile.id]),/permission denied/);
+      await assert.rejects(db.query("select public.remove_hoa_file($1)",[contractFile.id]),/Remove the stored PDF/);
+      await db.query("delete from storage.objects where bucket_id=$1 and name=$2",[contractFile.bucket_id,contractFile.storage_path]);
+      await db.query("select public.remove_hoa_file($1)",[contractFile.id]);
+    });
+    const baseline=Number(await scalar("select sum(reserved_bytes) from public.hoa_library_files"));
+    await db.query("insert into public.hoa_library_files(contact_id,bucket_id,storage_path,title,original_filename,expected_bytes,reserved_bytes,created_by) select $1,'hoa-contracts','fixture-'||n||'.pdf','Quota fixture','test.pdf',1,least(2000000,500000000-$2-((n-1)*2000000)),$3 from generate_series(1,ceil((500000000-$2)/2000000.0)::int) n",[serviceContact,baseline,staff]);
+    await asRole("authenticated",staff,"aal2",async()=>{
+      assert.equal((await scalar("select public.get_hoa_library_usage()")).allocated_bytes,500000000);
+      await assert.rejects(reserve(serviceContact,null,1),/500 MB library budget/);
+      await assert.rejects(db.query("update public.hoa_library_files set reserved_bytes=1"),/permission denied/);
+    });
+    await db.query("delete from public.hoa_library_files where title='Quota fixture'");
+    await db.query("insert into storage.objects(bucket_id,name,metadata) values('hoa-private-documents','other-project-fixture.pdf','{\"size\":799999000}')");
+    await asRole("authenticated",staff,"aal2",async()=>await assert.rejects(reserve(serviceContact,null,1),/Project storage is near/));
+    await db.query("delete from storage.objects where name='other-project-fixture.pdf'");
+  });
+  await t.test("role revocation immediately removes contacts, contract and upload access; a serving Officer alone has access",async()=>{
+    await db.query("update public.board_member_years set privileges_enabled=false where person_id=$1",[person]);
+    await asRole("authenticated",staff,"aal2",async()=>{
+      assert.equal(await scalar("select count(*) from public.hoa_service_contacts"),0);
+      await assert.rejects(reserve(serviceContact,null),/MFA required/);
+    });
+    await db.query("update public.officer_member_years set position_code='secretary',privileges_enabled=true,starts_on=current_date,ends_on=current_date where person_id=$1 and source='administrative_entry'",[person]);
+    await asRole("authenticated",staff,"aal2",async()=>{
+      assert.equal((await flags()).is_director,false); assert.equal((await flags()).is_officer,true);
+      assert.equal(await scalar("select count(*) from public.hoa_service_contacts"),1);
+      await db.query("update public.hoa_service_contacts set archived=true where id=$1",[serviceContact]);
+      await assert.rejects(reserve(serviceContact,null),/active contact/);
+    });
   });
 });

@@ -13,12 +13,14 @@ const roster=await client.rpc("get_public_leadership_roster");
 assert.ifError(roster.error);
 assert.equal(roster.data.board.length,86);
 assert.equal(roster.data.officers.find((row)=>row.year===2026 && row.position_code==="president").name,"Michael Bruna");
-for(const table of ["contacts","contact_emails","property_contacts","rental_agreements","property_documents","portal_account_details"]) {
+for(const table of ["contacts","contact_emails","property_contacts","rental_agreements","property_documents","portal_account_details","hoa_service_contacts","hoa_publications","hoa_library_files"]) {
   const {data,error}=await client.from(table).select("*");
   assert.ok(error || data.length===0,`Anonymous access must be denied: ${table}`);
 }
 const secret=await client.rpc("get_homeowner_signup_passcode");
 assert.ok(secret.error,"Public access to the signup code must be denied");
+const libraryUsage=await client.rpc("get_hoa_library_usage");
+assert.ok(libraryUsage.error,"Public access to library management must be denied");
 const settingsResponse=await fetch(`${url}/auth/v1/settings`,{headers:{apikey:key}});
 assert.equal(settingsResponse.status,200);
 const settings=await settingsResponse.json();
