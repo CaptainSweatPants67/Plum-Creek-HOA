@@ -6,7 +6,7 @@ import { getSavedLeadershipRoster } from "../../lib/leadership-source";
 export const metadata: Metadata = {
   title: "HOA Board | Plum Creek",
   description:
-    "Current Plum Creek HOA board members and historical board roster.",
+    "Current Plum Creek HOA Board of Directors.",
 };
 
 export default function BoardPage() {
@@ -18,8 +18,7 @@ export default function BoardPage() {
         <p className="section-kicker">Association leadership</p>
         <h1>HOA board</h1>
         <p>
-          Meet the latest board roster on file and review Plum Creek&apos;s
-          leadership history.
+          Meet the current Plum Creek Board of Directors.
         </p>
       </section>
 

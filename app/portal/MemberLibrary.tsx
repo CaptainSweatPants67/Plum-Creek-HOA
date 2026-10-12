@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { displayDate, downloadLibraryPdf, fileSize, loadLibraryRows, type LibraryFile, type Publication } from "../../lib/hoa-library";
+import { WorkspaceSection } from "./WorkspaceSection";
 
 export function MemberLibrary({ client }: { client: SupabaseClient }) {
   const [posts, setPosts] = useState<Publication[] | null>(null);
@@ -29,8 +30,8 @@ export function MemberLibrary({ client }: { client: SupabaseClient }) {
     finally { setBusy(false); }
   }
   const visible = posts?.filter(p => (filter === "all" || p.kind === filter) && `${p.title} ${p.body} ${p.publication_date}`.toLowerCase().includes(search.toLowerCase()));
-  return <div className="portal-panel">
-    <h2>Minutes &amp; announcements</h2><p>Published updates for signed-in members. Select a PDF to download it.</p>
+  return <WorkspaceSection title="Minutes & announcements" description="Published member updates" defaultOpen>
+    <p>Published updates for signed-in members. Select a PDF to download it.</p>
     <div className="library-filters"><label className="portal-search">Search updates<input type="search" value={search} onChange={e => setSearch(e.target.value)} /></label>
       <label>Show<select value={filter} onChange={e => setFilter(e.target.value)}><option value="all">All updates</option><option value="minutes">Minutes</option><option value="announcement">Announcements</option></select></label></div>
     {message && <p className="portal-notice" role="status">{message}</p>}
@@ -39,5 +40,5 @@ export function MemberLibrary({ client }: { client: SupabaseClient }) {
       {post.body && <p className="library-body">{post.body}</p>}
       <ul className="library-file-list">{files.filter(f => f.publication_id === post.id).map(file => <li key={file.id}><span>{file.title} <small>PDF · {fileSize(file.reserved_bytes)}</small></span><button disabled={busy} onClick={() => download(file)}>Download PDF</button></li>)}</ul>
     </article>)}
-  </div>;
+  </WorkspaceSection>;
 }

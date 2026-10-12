@@ -1,0 +1,71 @@
+/* Private workspace has a distinct, compact interface. */
+.portal-shell { --ink: #172435; --forest: #245c88; --forest-deep: #163c5c; --cream: #fff; --paper: #fff; --sand: #e8f1f8; --line: #d6dfe8; --terracotta: #246ca5; min-height: 100vh; background: #f1f4f7; color: var(--ink); font-size: 14px; line-height: 1.5; }
+.portal-shell h1, .portal-shell h2, .portal-shell h3 { font-family: Arial, Helvetica, sans-serif; }
+.portal-topbar { position: static; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px max(20px, calc((100vw - 1240px) / 2)); background: #172d43; color: #fff; }
+.portal-topbar a { color: inherit; font-size: 14px; }
+.portal-brand { font-weight: 700; text-decoration: none; }
+.portal-brand span { display: inline-block; font-weight: 400; color: #b9d4e8; padding-left: 10px; }
+.portal-bottom { padding: 20px; text-align: center; color: #526478; font-size: 12px; }
+.portal-app { max-width: 1280px; padding: 24px 20px 32px; margin: 0 auto; min-height: 70vh; }
+.portal-page-heading { padding: 0 0 8px; }
+.portal-shell .section-kicker { font-size: 11px; letter-spacing: .08em; color: #526478; margin: 0 0 4px; }
+.portal-page-heading h1 { font-size: clamp(24px, 3vw, 30px); margin: 0 0 6px; line-height: 1.2; letter-spacing: -.02em; }
+.portal-page-heading > p:last-child { margin: 0; max-width: 850px; color: #526478; }
+.portal-app .portal-section { max-width: none; padding: 0; }
+.portal-app .portal-panel { padding: 18px; margin: 14px 0; border-radius: 7px; background: #fff; }
+.portal-app h2 { font-size: 19px; line-height: 1.35; margin: 0 0 10px; letter-spacing: 0; }
+.portal-app h3 { font-size: 16px; margin: 0 0 8px; }
+.portal-app p { margin: 8px 0; }
+.portal-app .portal-form { gap: 12px; padding: 8px 0; }
+.portal-app .portal-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 900px; }
+.portal-app .form-wide { grid-column: 1 / -1; }
+.portal-app label { font-size: 13px; }
+.portal-app input, .portal-app select, .portal-app textarea { font: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-width: 0; background: #fff; color: var(--ink); width: 100%; }
+.portal-app .portal-form input, .portal-app .portal-form select, .portal-app .library-filters select { min-height: 40px; padding: 8px 10px; }
+.portal-app .portal-checkbox input, .portal-app .library-check input { width: 18px; min-height: 18px; margin: 1px 0 0; }
+.portal-app button { min-height: 40px; padding: 7px 12px; font-size: 13px; border-radius: 4px; }
+.portal-app .portal-heading { gap: 10px; }
+.portal-app .portal-heading > p { flex: 1 1 300px; }
+.portal-app .portal-notice { padding: 12px; border-radius: 3px; }
+.portal-app .portal-account { padding: 12px 16px; }
+.portal-account p { font-weight: 600; overflow-wrap: anywhere; }
+.signed-in-label { color: #236443; font-size: 12px; font-weight: 700; }
+.portal-app .portal-badges { gap: 6px; }
+.portal-app .portal-badges span { font-size: 11px; border-radius: 4px; padding: 3px 8px; }
+.portal-app .portal-links { gap: 5px; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.portal-app .portal-links a { padding: 6px 10px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; }
+.portal-app .portal-links a:first-child { display: block; }
+.portal-app .portal-links a[aria-current="page"] { color: #fff; background: #245c88; }
+.portal-app .portal-links a:hover { background: #e8f1f8; color: #163c5c; }
+.section-controls { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px; margin: 14px 0 6px; }
+.section-controls span { margin-right: auto; color: #526478; font-size: 12px; }
+.portal-app .section-controls button { background: #fff; color: #245c88; border-color: var(--line); min-height: 36px; padding: 5px 10px; }
+.portal-app .workspace-section { padding: 0; }
+.portal-app .workspace-section > summary { padding: 14px 18px; color: var(--ink); cursor: pointer; }
+.workspace-section > summary h2 { display: inline; font-size: 17px; margin: 0; }
+.workspace-section > summary > span { display: block; font-size: 12px; color: #526478; font-weight: 400; margin-left: 19px; margin-top: 3px; }
+.workspace-section[open] > summary { border-bottom: 1px solid var(--line); }
+.workspace-section-body { padding: 14px 18px; }
+.portal-app .history-table-wrap { margin-top: 12px; max-height: 530px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; }
+.portal-app table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.portal-app th { position: sticky; top: 0; z-index: 1; background: #edf2f6; color: var(--ink); text-align: left; white-space: nowrap; }
+.portal-app td, .portal-app th { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.portal-app tbody tr:nth-child(even) { background: #f8fafc; }
+.portal-app .portal-review-card { margin-top: 14px; padding-top: 12px; }
+.portal-app .library-contact-grid { gap: 8px; margin-top: 12px; }
+.portal-app .library-file-list li { gap: 10px; padding: 10px 0; }
+.portal-app .library-filters { gap: 12px; }
+.portal-app .library-filters > label { min-width: 0; }
+.portal-app .portal-tabs { gap: 6px; }
+.portal-app .portal-tabs button { background: #fff; color: #245c88; border-color: var(--line); }
+.portal-app .portal-tabs button[aria-pressed="true"] { color: #fff; background: #245c88; border-color: #245c88; }
+@media (max-width: 600px) {
+  .portal-app { padding: 18px 12px 24px; }
+  .portal-topbar { padding: 12px; gap: 10px; }
+  .portal-brand span { display: block; padding: 0; font-size: 11px; }
+  .portal-app .portal-form-grid { grid-template-columns: 1fr; }
+  .portal-app .form-wide { grid-column: auto; }
+  .workspace-section-body { padding: 12px; }
+  .portal-app .workspace-section > summary { padding: 12px; }
+  .portal-app .portal-links a { padding: 7px 8px; }
+}

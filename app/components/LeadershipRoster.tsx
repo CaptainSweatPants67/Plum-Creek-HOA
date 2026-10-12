@@ -25,7 +25,6 @@ export function LeadershipRoster({ savedRoster, mode }: { savedRoster: Roster; m
   const calendarYear = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", year: "numeric" }).format(new Date()));
   const year = Math.max(...records.filter((row) => row.year <= calendarYear).map((row) => row.year), 2026);
   const current = records.filter((row) => row.year === year);
-  const history = [...records].filter((row) => row.year <= calendarYear).sort((a, b) => b.year - a.year);
 
   return <>
     {notice && <p role="status" className="portal-notice">{notice}</p>}
@@ -43,13 +42,6 @@ export function LeadershipRoster({ savedRoster, mode }: { savedRoster: Roster; m
           </article>;
         })}
       </div>
-    </section>
-    <section className="history-section">
-      <div className="section-heading history-heading"><div><p className="section-kicker">Association record</p><h2>{`${mode === "board" ? "Board" : "Officer"} history`}</h2></div>
-        <p>Historical roster entries are shown as recorded. Public listings do not grant portal privileges.</p></div>
-      <div className="history-table-wrap"><table><thead><tr><th>Year</th><th>Person</th><th>Position</th></tr></thead><tbody>
-        {history.map((member) => <tr key={member.id}><td>{member.year}</td><td>{member.name}</td><td>{member.position}</td></tr>)}
-      </tbody></table></div>
     </section>
   </>;
 }

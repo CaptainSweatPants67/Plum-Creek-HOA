@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LeadershipRoster } from "../components/LeadershipRoster";
 import { getSavedLeadershipRoster } from "../../lib/leadership-source";
 
-export const metadata: Metadata = { title: "HOA Officers | Plum Creek", description: "Annual Plum Creek HOA officer appointments and service history." };
+export const metadata: Metadata = { title: "HOA Officers | Plum Creek", description: "Current Plum Creek HOA officer appointments." };
 
 export default function OfficersPage() {
   return <main className="inner-page">

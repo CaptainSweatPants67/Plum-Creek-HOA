@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PUBLICATION_MAX_BYTES, displayDate, downloadLibraryPdf, fileSize, loadLibraryRows, removeLibraryPdf, uploadLibraryPdf, validatePdf, type LibraryFile, type LibraryUsage, type Publication, type ServiceContact } from "../../lib/hoa-library";
+import { WorkspaceSection } from "./WorkspaceSection";
 
 function errorMessage(error: unknown) { return error && typeof error === "object" && "message" in error ? String(error.message) : "Please try again."; }
 function text(values: FormData, name: string) { return String(values.get(name) ?? "").trim(); }
@@ -127,21 +128,21 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
   const post = editingPost && editingPost !== "new" ? editingPost : null;
   const visibleContacts = contacts.filter(c => (showArchived || !c.archived) && [c.name, c.purpose, c.contact_person, c.email, c.phone, c.notes].join(" ").toLowerCase().includes(search.toLowerCase()));
   return <>
-    <div className="portal-panel library-storage"><h2>File storage</h2>
+    <WorkspaceSection title="File storage" description={usage ? `${fileSize(usage.stored_bytes)} stored · 500 MB library budget` : "Upload limits and storage budget"} className="library-storage">
       {usage && <><p><strong>{fileSize(usage.stored_bytes)}</strong> stored · {fileSize(usage.allocated_bytes)} allocated of the <strong>500 MB library budget</strong></p><progress value={usage.allocated_bytes} max={usage.budget_bytes} aria-label="Library storage used" />
         {usage.pending_uploads > 0 && <p>{usage.pending_uploads} incomplete upload{usage.pending_uploads === 1 ? " reserves" : "s reserve"} space. Remove incomplete entries to release it.</p>}
         {usage.allocated_bytes >= 400_000_000 && <p className="portal-notice">Storage is over 80% full. Download and remove unneeded PDFs before adding more.</p>}
         {usage.project_bytes >= 700_000_000 && <p className="portal-notice">Other project files are using storage too. Project usage is {fileSize(usage.project_bytes)}; new uploads stop before 800 MB.</p>}</>}
       <p>Contracts: PDF up to 2 MB. Minutes and announcements: PDF up to 1 MB. Smaller text-based PDFs last longer; keep original copies in your HOA records.</p>
-    </div>
+    </WorkspaceSection>
     {message && <p className="portal-notice" role="status">{message}</p>}
     <div className="portal-tabs"><button disabled={busy} aria-pressed={tab === "contacts"} onClick={() => setTab("contacts")}>Contacts &amp; contracts</button><button disabled={busy} aria-pressed={tab === "publications"} onClick={() => setTab("publications")}>Minutes &amp; announcements</button></div>
     {tab === "contacts" ? <>
-      <div className="portal-panel"><div className="portal-heading"><h2>Service contacts</h2><button disabled={busy} onClick={() => setEditingContact("new")}>New contact</button></div><p>Your private HOA rolodex. Use any purpose: mowing, insurance, pond maintenance, or something else.</p>
+      <WorkspaceSection title="Service contacts" description={`${contacts.filter(contact => !contact.archived).length} active contacts`} defaultOpen><div className="portal-heading"><p>Your private HOA rolodex. Use any purpose.</p><button disabled={busy} onClick={() => setEditingContact("new")}>New contact</button></div>
         <label className="portal-search">Search contacts or purpose<input type="search" value={search} onChange={e => setSearch(e.target.value)} /></label>
         <label className="library-check"><input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} /> Include archived contacts</label>
         {visibleContacts.length ? <div className="library-contact-grid">{visibleContacts.map(c => <button className="library-contact-choice" aria-pressed={selectedId === c.id} key={c.id} disabled={busy} onClick={() => setSelectedId(c.id)}><strong>{c.name}</strong><span>{c.purpose}{c.archived ? " · Archived" : ""}</span><small>{c.contact_person || c.email || c.phone || "Open contact card"}</small></button>)}</div> : <p>{contacts.length ? "No contacts match your search." : "No contacts yet. Create your first contact above."}</p>}
-      </div>
+      </WorkspaceSection>
       {editingContact && <div className="portal-panel"><h2>{contact ? "Edit contact" : "Create a contact"}</h2><form className="portal-form" key={contact?.id ?? "new"} onSubmit={saveContact}>
         <label>Company or contact name<input name="name" required maxLength={160} defaultValue={contact?.name} /></label>
         <label>Purpose<input name="purpose" required maxLength={100} list="contact-purposes" placeholder="Mowing, insurance, pond maintenance…" defaultValue={contact?.purpose} /><datalist id="contact-purposes"><option value="Mowing" /><option value="Insurance" /><option value="Pond maintenance" />{[...new Set(contacts.map(c => c.purpose))].filter(p => !["Mowing", "Insurance", "Pond maintenance"].includes(p)).map(p => <option key={p} value={p} />)}</datalist></label>
@@ -153,12 +154,12 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
         <label className="portal-checkbox"><input name="archived" type="checkbox" defaultChecked={contact?.archived} /> Archived contact (retains its contracts)</label>
         <div className="portal-actions"><button disabled={busy}>Save contact</button><button type="button" disabled={busy} onClick={() => setEditingContact(null)}>Cancel</button></div>
       </form></div>}
-      {selected && <div className="portal-panel library-contact-card"><div className="portal-heading"><h2>{selected.name}</h2><button disabled={busy} onClick={() => setEditingContact(selected)}>Edit contact</button></div><p className="section-kicker">{selected.purpose}{selected.archived ? " · Archived" : ""}</p>
+      {selected && <WorkspaceSection key={selected.id} title={selected.name} description={selected.purpose} className="library-contact-card" defaultOpen><div className="portal-heading"><p>{selected.archived ? "Archived contact" : "Contact details & contracts"}</p><button disabled={busy} onClick={() => setEditingContact(selected)}>Edit contact</button></div>
         <dl className="library-contact-details">{selected.contact_person && <><dt>Contact person</dt><dd>{selected.contact_person}</dd></>}{selected.email && <><dt>Email</dt><dd><a href={`mailto:${encodeURIComponent(selected.email)}`}>{selected.email}</a></dd></>}{selected.phone && <><dt>Phone</dt><dd><a href={`tel:${selected.phone.replace(/[^+\d]/g, "")}`}>{selected.phone}</a></dd></>}{selected.website && <><dt>Website</dt><dd><a href={selected.website} target="_blank" rel="noopener noreferrer">{selected.website}</a></dd></>}{selected.address && <><dt>Address</dt><dd>{selected.address}</dd></>}</dl>
         {selected.notes && <p className="library-body">{selected.notes}</p>}<h3>Contracts</h3><FileList files={files.filter(f => f.contact_id === selected.id)} busy={busy} download={download} remove={remove} />
         {!selected.archived && <details key={selected.id}><summary>Add a contract PDF</summary><FileUpload contactId={selected.id} busy={busy} upload={upload} /></details>}
-      </div>}
-    </> : <div className="portal-panel"><div className="portal-heading"><h2>Member updates</h2><button disabled={busy} onClick={() => setEditingPost("new")}>New minutes or announcement</button></div><p>Published updates are visible to any confirmed, signed-in member. Drafts stay private to leadership.</p>
+      </WorkspaceSection>}
+    </> : <WorkspaceSection title="Member updates" description={`${posts.filter(post => post.published).length} published · ${posts.filter(post => !post.published).length} drafts`} defaultOpen><div className="portal-heading"><p>Published updates are visible to signed-in members. Drafts stay private to leadership.</p><button disabled={busy} onClick={() => setEditingPost("new")}>New minutes or announcement</button></div>
       {editingPost && <form className="portal-form" key={post?.id ?? "new"} onSubmit={savePublication}>
         <label>Update type<select name="kind" defaultValue={post?.kind ?? "minutes"}><option value="minutes">Meeting minutes</option><option value="announcement">Announcement</option></select></label>
         <label>Title<input name="title" required maxLength={180} defaultValue={post?.title} /></label>
@@ -172,6 +173,6 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
         {p.body && <p className="library-body">{p.body}</p>}<FileList files={files.filter(f => f.publication_id === p.id)} busy={busy} download={download} remove={remove} />
         <details><summary>Add PDF attachment</summary><FileUpload publicationId={p.id} busy={busy} upload={upload} /></details>
       </article>) : <p>No updates yet. Add minutes or an announcement above.</p>}
-    </div>}
+    </WorkspaceSection>}
   </>;
 }

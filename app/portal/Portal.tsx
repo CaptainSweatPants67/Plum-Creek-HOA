@@ -10,6 +10,8 @@ import { MemberWorkspace } from "./MemberWorkspace";
 import { StaffWorkspace } from "./StaffWorkspace";
 import { LeadershipRecords } from "./LeadershipRecords";
 import { MemberLibrary } from "./MemberLibrary";
+import { MemberResources } from "./MemberResources";
+import { SectionControls, WorkspaceSection } from "./WorkspaceSection";
 
 type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean };
 type Code = { passcode: string; enabled: boolean; updated_at: string };
@@ -157,7 +159,6 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
   if (!authReady) return <section className="portal-section"><p role="status">Loading your account…</p></section>;
   if (!client) return <section className="portal-section"><p>Portal setup is in progress. Please contact the HOA for access.</p></section>;
   const leadership = flags && (flags.is_admin || flags.is_director || flags.is_officer);
-  const libraryView = view === "leadership" || view === "documents";
   return <section className="portal-section">
     {message && <p className="portal-notice" role="status">{message}</p>}
     {!session ? <div className="portal-panel">
@@ -172,27 +173,26 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
         <button type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send reset link" : "Sign in"}</button>
       </form>
     </div> : <>
-      <div className={`portal-panel${libraryView ? " library-account" : ""}`}><div className="portal-heading"><h2>Your account</h2><button onClick={async () => { await client.auth.signOut(); setCode(null); setMessage(""); }}>Sign out</button></div>
-        <p>{session.user.email}</p>
+      <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setCode(null); setMessage(""); }}>Sign out</button></div>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
-        {!libraryView && <p>Property access depends on separately approved ownership requests.</p>}
-        <div className="portal-links"><Link href="/members/">My information and properties →</Link><Link href="/member-documents/">Minutes &amp; announcements →</Link><Link href="/portal/reset-password/">Change your password →</Link>{leadership && <Link href="/admin/">Leadership administration →</Link>}{(flags?.is_director || flags?.is_officer) && <Link href="/leadership/">Officer &amp; Director workspace →</Link>}</div>
+        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">My information &amp; properties</Link><Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>{leadership && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">Membership &amp; leadership</Link>}{(flags?.is_director || flags?.is_officer) && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Contacts &amp; member updates</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
       </div>
+      <SectionControls />
       {leadership && !flags.has_mfa && <div className="portal-panel"><h2>Verify your leadership login</h2><p>MFA is required to view the homeowner signup passcode or manage appointments.</p>
         {!factorId && <button onClick={beginMfa} disabled={busy}>Set up or verify authenticator</button>}
         {qr && <><p>Scan this QR code with your authenticator app.</p><Image src={qr} alt="Your authenticator enrollment QR code" width={220} height={220} unoptimized /></>}
         {factorId && <form className="portal-form" onSubmit={verifyMfa}><label>Authenticator code<input name="mfa_code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label><button disabled={busy}>Verify MFA</button></form>}
       </div>}
-      {flags?.can_view_signup_code && !libraryView && <div className="portal-panel"><h2>Homeowner signup passcode</h2><p>Share this code with homeowners who want to register. It grants registration only; ownership approval is separate.</p>
+      {flags?.can_view_signup_code && view === "admin" && <WorkspaceSection title="Homeowner signup passcode" description="Show or replace the registration code"><p>Share this code with homeowners who want to register. It grants registration only; ownership approval is separate.</p>
         <div className="portal-actions"><button disabled={busy} onClick={showCode}>Show signup passcode</button>{code && <button onClick={() => setCode(null)}>Hide passcode</button>}{flags.is_admin && <button disabled={busy} onClick={rotateCode}>Replace passcode</button>}</div>
         {code && <div className="portal-code"><strong>{code.passcode}</strong><p>{code.enabled ? "Registration code is active." : "Registration code is disabled."}</p></div>}
-      </div>}
-      {view === "members" && <MemberWorkspace key={session.user.id} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
-      {view === "documents" && <MemberLibrary key={session.user.id} client={client} />}
-      {view === "leadership" && flags?.has_mfa && (flags.is_director || flags.is_officer) && <LeadershipRecords key={session.user.id} client={client} />}
+      </WorkspaceSection>}
+      {view === "members" && <MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
+      {view === "documents" && <><MemberResources key={`resources-${session.user.id}`} client={client} /><MemberLibrary key={`library-${session.user.id}`} client={client} /></>}
+      {view === "leadership" && flags?.has_mfa && (flags.is_director || flags.is_officer) && <LeadershipRecords key={`records-${session.user.id}`} client={client} />}
       {view === "leadership" && flags && !flags.is_director && !flags.is_officer && <div className="portal-panel"><h2>Director or Officer access required</h2><p>This workspace is for currently appointed Directors and Officers. Members can read published minutes and announcements.</p><Link href="/member-documents/">Read member updates →</Link></div>}
-      {view === "admin" && flags?.can_view_signup_code && <StaffWorkspace key={session.user.id} client={client} userId={session.user.id} />}
-      {view === "admin" && flags?.can_manage_leadership && <LeadershipManager key={session.user.id} client={client} />}
+      {view === "admin" && flags?.can_manage_leadership && <LeadershipManager key={`leadership-${session.user.id}`} client={client} />}
+      {view === "admin" && flags?.can_view_signup_code && <StaffWorkspace key={`staff-${session.user.id}`} client={client} userId={session.user.id} />}
       {view === "admin" && flags && !leadership && <div className="portal-panel"><h2>Leadership access required</h2><p>This page is available to assigned Directors, Officers, and system administrators. You can manage your own information on the member page.</p></div>}
     </>}
   </section>;

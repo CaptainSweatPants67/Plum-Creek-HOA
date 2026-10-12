@@ -38,6 +38,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("leadership_policy_refinement"));
   await db.exec(await migration("member_information_and_property_review"));
   await db.exec(await migration("leadership_contacts_and_member_documents"));
+  await db.exec(await migration("private_member_resources"));
   async function asRole(role, uid, aal, fn) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -45,10 +46,16 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   }
   const scalar = async (sql, params=[]) => Object.values((await db.query(sql,params)).rows[0])[0];
   const flags = () => scalar("select public.get_portal_flags()");
-  await t.test("anonymous roster shows current President and preserves historical rows without privileges", async () => {
+  await t.test("anonymous roster and direct tables expose only current published leadership", async () => {
     await asRole("anon", null, null, async () => {
       const roster = await scalar("select public.get_public_leadership_roster()");
-      assert.equal(roster.board.length,86);
+      assert.equal(roster.board.length,5);
+      assert.equal(roster.officers.length,4);
+      assert.ok(roster.board.every(row=>row.kind!=='historical'));
+      assert.equal(await scalar("select count(*) from public.board_member_years"),5);
+      assert.equal(await scalar("select count(*) from public.officer_member_years"),4);
+      assert.ok(await scalar("select count(*) from public.leadership_people") < 10);
+      await assert.rejects(db.query("select public.get_member_leadership_history()"),/permission denied/);
       assert.equal(roster.officers.find((r) => r.year===2026 && r.position_code==="president").name,"Michael Bruna");
       assert.equal(roster.officers.find((r) => r.year===2026 && r.position_code==="vice_president").person_id,null);
       assert.ok(!JSON.stringify(roster).includes("@"));
@@ -58,6 +65,27 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
       assert.equal(await scalar("select count(*) from public.contacts"),0);
     });
     assert.equal(await scalar("select count(*) from public.board_member_years where privileges_enabled"),0);
+  });
+  await t.test("confirmed members can read historical leadership and bylaws; anonymous and unconfirmed accounts cannot",async()=>{
+    await db.exec("insert into storage.objects(bucket_id,name,metadata) values('hoa-member-governance','plum-creek-bylaws.pdf','{\"size\":3600000,\"mimetype\":\"application/pdf\"}')");
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      const history=await scalar('select public.get_member_leadership_history()');
+      assert.equal(history.board.length,86);
+      assert.ok(history.board.some(row=>row.kind==='historical'));
+      assert.equal((await scalar('select public.get_public_leadership_roster()')).board.length,5);
+      assert.equal(await scalar("select count(*) from storage.objects where bucket_id='hoa-member-governance'"),1);
+      await assert.rejects(db.query("insert into storage.objects(bucket_id,name) values('hoa-member-governance','unauthorized.pdf')"),/row-level security/);
+      assert.equal((await db.query("update storage.objects set name='changed.pdf' where bucket_id='hoa-member-governance' returning id")).rows.length,0);
+    });
+    await asRole('anon',null,null,async()=>assert.equal(await scalar("select count(*) from storage.objects where bucket_id='hoa-member-governance'"),0));
+    await db.query('update auth.users set email_confirmed_at=null where id=$1',[homeowner]);
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await assert.rejects(db.query('select public.get_member_leadership_history()'),/Confirmed member/);
+      assert.equal(await scalar("select count(*) from storage.objects where bucket_id='hoa-member-governance'"),0);
+      assert.equal(await scalar("select count(*) from public.board_member_years where record_kind='historical'"),0);
+    });
+    await db.query('update auth.users set email_confirmed_at=now() where id=$1',[homeowner]);
+    await db.exec("delete from storage.objects where bucket_id='hoa-member-governance'");
   });
   await t.test("user metadata cannot grant admin or homeowner contact access", async () => {
     await asRole("authenticated",homeowner,"aal2",async () => {
@@ -125,6 +153,24 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     assert.equal(await scalar("select count(*) from public.contacts where contact_verified_at is not null"),0);
     assert.equal(await scalar("select contact_id from public.user_profiles where user_id=$1",[admin]),null);
     await asRole("anon",null,null,async () => assert.equal(await scalar("select count(*) from public.leadership_people where display_name='Draft private person'"),0));
+  });
+  await t.test("administrator appointment and display-name edits update the current public roster immediately",async()=>{
+    const appointment=await scalar("select id from public.board_member_years where service_year=2026 and record_kind='director' and not privileges_enabled limit 1");
+    const original=(await db.query('select * from public.board_member_years where id=$1',[appointment])).rows[0];
+    const originalName=await scalar('select display_name from public.leadership_people where id=$1',[original.person_id]);
+    await asRole('authenticated',admin,'aal2',async()=>{
+      await db.query("update public.leadership_people set display_name='Updated roster fixture' where id=$1",[original.person_id]);
+      await db.query("update public.board_member_years set seat_label='Updated term fixture' where id=$1",[appointment]);
+    });
+    await asRole('anon',null,null,async()=>{
+      const row=(await scalar('select public.get_public_leadership_roster()')).board.find(row=>row.id===appointment);
+      assert.equal(row.name,'Updated roster fixture'); assert.equal(row.term,'Updated term fixture');
+    });
+    await asRole('authenticated',admin,'aal2',async()=>db.query('update public.board_member_years set published=false where id=$1',[appointment]));
+    await asRole('anon',null,null,async()=>assert.equal((await scalar('select public.get_public_leadership_roster()')).board.some(row=>row.id===appointment),false));
+    await asRole('authenticated',homeowner,'aal2',async()=>assert.equal((await db.query('update public.board_member_years set published=true where id=$1 returning id',[appointment])).rows.length,0));
+    await db.query('update public.leadership_people set display_name=$1 where id=$2',[originalName,original.person_id]);
+    await db.query('update public.board_member_years set published=$1,seat_label=$2 where id=$3',[original.published,original.seat_label,appointment]);
   });
   await t.test("rotation invalidates outstanding tickets and old passcode", async () => {
     const issued=await ticket("rotating@example.test");

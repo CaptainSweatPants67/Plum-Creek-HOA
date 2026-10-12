@@ -25,7 +25,7 @@ const destinations = [
     number: "03",
     title: "HOA Documents",
     description:
-      "Download the recorded restrictions, association bylaws, ratifying declarations, and neighborhood plat maps.",
+      "Download the recorded restrictions, ratifying declarations, and neighborhood plat maps.",
     href: "/documents/",
     linkLabel: "View HOA documents",
   },
@@ -33,7 +33,7 @@ const destinations = [
     number: "04",
     title: "Board of Directors",
     description:
-      "Meet the current HOA officers and review Plum Creek's history of Board service.",
+      "Meet the current Plum Creek Board of Directors and HOA officers.",
     href: "/board/",
     linkLabel: "Meet the Board",
   },

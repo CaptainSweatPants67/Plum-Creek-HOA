@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "./components/SiteFooter";
-import { SiteHeader } from "./components/SiteHeader";
+import { SiteChrome } from "./components/SiteChrome";
 import "./globals.css";
+import "./portal.css";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -11,7 +11,7 @@ const siteUrl =
 export const metadata: Metadata = {
   title: "Plum Creek Homeowners Association",
   description:
-    "Official Plum Creek HOA information, board history, community events, governing documents, and recorded neighborhood plats.",
+    "Official Plum Creek HOA information, current leadership, community events, governing documents, and recorded neighborhood plats.",
   metadataBase: new URL(siteUrl),
   icons: {
     icon: "/plum-creek-entrance.jpg",
@@ -47,9 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

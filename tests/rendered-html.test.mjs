@@ -91,10 +91,10 @@ test("exports the Plum Creek community pages", async () => {
   assert.match(board, /appoints the President/);
   assert.match(board, /href="\/events\//);
   assert.match(board, /href="\/run-for-board\//);
-  assert.match(board, /Board history/);
+  assert.doesNotMatch(board, /Board history|Historical roster entry|history-\d/);
   assert.match(board, /href="\/officers\//);
   const officers = await readFile(new URL("../out/officers/index.html", import.meta.url), "utf8");
-  assert.match(officers, /Officer history/);
+  assert.doesNotMatch(officers, /Officer history|officer-history-/);
   assert.match(officers, /President/);
   assert.match(officers, /Michael Bruna/);
   const portal = await readFile(new URL("../out/portal/index.html", import.meta.url), "utf8");
@@ -112,7 +112,7 @@ test("exports the Plum Creek community pages", async () => {
   const memberDocuments = await readFile(new URL("../out/member-documents/index.html", import.meta.url), "utf8");
   assert.match(leadership, /Officer &amp; Director workspace/);
   assert.match(leadership, /noindex, nofollow/);
-  assert.match(memberDocuments, /Minutes &amp; announcements/);
+  assert.match(memberDocuments, /Member library/);
   assert.match(memberDocuments, /noindex, nofollow/);
   assert.doesNotMatch(leadership, /Private notes|service_contacts.*email|storage_path/);
   assert.match(members, /noindex, nofollow/);
@@ -161,7 +161,8 @@ test("exports the Plum Creek community pages", async () => {
 
   assert.match(documents, /HOA documents/);
   assert.match(documents, /Declaration of Restrictions/);
-  assert.match(documents, /plum-creek-bylaws\.pdf/);
+  assert.doesNotMatch(documents, /plum-creek-bylaws\.pdf/);
+  await assert.rejects(readFile(new URL('../out/documents/plum-creek-bylaws.pdf',import.meta.url)), /ENOENT/);
   assert.match(documents, /supplemental-ratifying-declarations\.pdf/);
   assert.match(documents, /plat-map-3\.pdf/);
 

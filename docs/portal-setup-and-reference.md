@@ -6,14 +6,14 @@ Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase proj
 
 | Page | Behavior |
 | --- | --- |
-| `/board/` | Public Director roster and recorded Board history. Reads published Supabase records, with saved public source as fallback. |
-| `/officers/` | Annual President, Vice President, Secretary and Treasurer roster/history. |
-| `/portal/` | Signup, email confirmation return, login, password recovery, MFA and authorized signup-passcode display. |
+| `/board/` | Current public Director roster. Reads the latest published service year from Supabase, with current-only saved source as fallback. |
+| `/officers/` | Current public President, Vice President, Secretary and Treasurer appointments. |
+| `/portal/` | Signup, email confirmation return, login, password recovery, MFA and member navigation. |
 | `/portal/reset-password/` | Dedicated new-password form after recovery, with matching-password confirmation and a fresh-link request for expired or invalid callbacks. |
 | `/members/` | Own current contact details, ownership/co-ownership requests, review status and approved properties. |
 | `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
 | `/leadership/` | Current Directors/Officers with MFA maintain service contacts, attach contracts, and publish or draft minutes and announcements. |
-| `/member-documents/` | Confirmed signed-in accounts read published minutes/announcements and download their PDFs. |
+| `/member-documents/` | Confirmed signed-in accounts download bylaws, search Board/Officer history, and read published minutes/announcements and their PDFs. |
 
 Private pages export a sign-in shell with `noindex`. Private information loads only through authenticated database operations. UI visibility is not authorization. Browser code uses a modern publishable key; it contains no service-role key.
 
@@ -47,7 +47,13 @@ flowchart LR
   Approval --> Association[Verified property-contact association]
 ```
 
-## Permissions and public history
+## Permissions and member history
+
+Updated October 12, 2026: public roster APIs and anonymous table policies return only the latest published appointments (no historical Board rows). Historical names are no longer embedded in static HTML or serialized page data. The authenticated `get_member_leadership_history()` API requires a confirmed, non-anonymous account; MFA is not needed to read member resources. Direct table policies enforce the same historical privacy.
+
+The bylaws PDF moved from `public/documents/` into private `hoa-member-governance/plum-creek-bylaws.pdf` Storage. Its 3,786,266 bytes were uploaded and a downloaded copy was hash-checked against the original. A local backup remains in ignored `private-data/governance/`. Only confirmed accounts can read that exact object; there are no client upload, replacement or delete policies for this bucket. Its 5 MB PDF limit accommodates this existing document without raising the 1 MB publication or 2 MB contract limits. The old public PDF path is removed from the website export. Previously downloaded or archived copies cannot be recalled.
+
+Private pages have a compact blue/gray portal shell, smaller headings and controls, signed-in account status, active navigation, native collapsible sections and Collapse all / Expand all. Closing a section retains unsaved fields. Appointment management defaults to the current year, supports searching and editing existing seats, and provides public roster preview links. Display-name and published appointment edits update live public pages without a site rebuild. System administrator + MFA authorization remains required for appointment changes. Property reviews default to pending requests with status filtering; property management and login linking are collapsed initially.
 
 Publishing a roster is independent of granting login privileges. Privileges require a separately linked confirmed account, enabled appointment and current service dates. People can be Director, Officer, both or neither. Appointment date checks use PostgreSQL `current_date` (database timezone); role endpoints are inclusive. Bootstrap approves only the designated person's current-year Director/Officer records, from confirmation day through December 31. A multi-year public seat label does not automatically extend next year's login privileges.
 
@@ -100,7 +106,7 @@ Password recovery now returns to `https://plumcreekgardner.com/portal/reset-pass
 
 ## Migration state and validation
 
-Five additive migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. The contacts/documents migration was created and applied with the CLI; its dry run showed only that pending file:
+Six migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. The contacts/documents migration was created and applied with the CLI; its dry run showed only that pending file:
 
 | Recorded version | Migration |
 | --- | --- |
@@ -109,6 +115,7 @@ Five additive migrations are installed. The first four were created with the CLI
 | `20261011091457` | `leadership_policy_refinement` |
 | `20261011092105` | `member_information_and_property_review` |
 | `20261011214844` | `leadership_contacts_and_member_documents` |
+| `20261012172745` | `private_member_resources` |
 
 These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
 

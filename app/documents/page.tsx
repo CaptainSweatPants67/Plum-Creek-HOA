@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 const governingDocuments = [
   {
@@ -6,13 +7,6 @@ const governingDocuments = [
     description:
       "The recorded covenants and restrictions that guide property use within Plum Creek.",
     href: "/documents/declaration-of-restrictions.pdf",
-    size: "3.6 MB",
-  },
-  {
-    title: "Association By-Laws",
-    description:
-      "The rules that establish how the homeowners association is organized and governed.",
-    href: "/documents/plum-creek-bylaws.pdf",
     size: "3.6 MB",
   },
   {
@@ -50,7 +44,7 @@ type DocumentItem = (typeof governingDocuments)[number];
 export const metadata: Metadata = {
   title: "HOA Documents | Plum Creek",
   description:
-    "Download Plum Creek HOA governing documents, declarations, restrictions, bylaws, and recorded plat maps.",
+    "Download Plum Creek HOA declarations, restrictions, and recorded plat maps.",
 };
 
 function DownloadCard({ document }: { document: DocumentItem }) {
@@ -80,11 +74,12 @@ export default function DocumentsPage() {
         <h1>HOA documents</h1>
         <p>
           Download Plum Creek&apos;s governing documents, declarations,
-          restrictions, bylaws, and recorded neighborhood plats.
+          restrictions, and recorded neighborhood plats.
         </p>
       </section>
 
       <section className="documents-section documents-page-section">
+        <p className="portal-notice">Association bylaws and leadership history are available in the <Link href="/member-documents/">member library</Link> after signing in.</p>
         <div className="section-heading">
           <div>
             <p className="section-kicker">Official records</p>
