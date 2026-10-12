@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PUBLICATION_MAX_BYTES, displayDate, downloadLibraryPdf, fileSize, loadLibraryRows, removeLibraryPdf, uploadLibraryPdf, validatePdf, type LibraryFile, type LibraryUsage, type Publication, type ServiceContact } from "../../lib/hoa-library";
 import { WorkspaceSection } from "./WorkspaceSection";
+import { CalendarManager } from "./CalendarManager";
+import { ServicePasswordSafe } from "./ServicePasswordSafe";
 
 function errorMessage(error: unknown) { return error && typeof error === "object" && "message" in error ? String(error.message) : "Please try again."; }
 function text(values: FormData, name: string) { return String(values.get(name) ?? "").trim(); }
@@ -28,7 +30,7 @@ function FileUpload({ contactId, publicationId, busy, upload }: { contactId?: st
 }
 
 export function LeadershipRecords({ client }: { client: SupabaseClient }) {
-  const [tab, setTab] = useState<"contacts" | "publications">("contacts");
+  const [tab, setTab] = useState<"contacts" | "minutes" | "announcements" | "calendar">("contacts");
   const [contacts, setContacts] = useState<ServiceContact[]>([]);
   const [posts, setPosts] = useState<Publication[]>([]);
   const [files, setFiles] = useState<LibraryFile[]>([]);
@@ -128,15 +130,9 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
   const post = editingPost && editingPost !== "new" ? editingPost : null;
   const visibleContacts = contacts.filter(c => (showArchived || !c.archived) && [c.name, c.purpose, c.contact_person, c.email, c.phone, c.notes].join(" ").toLowerCase().includes(search.toLowerCase()));
   return <>
-    <WorkspaceSection title="File storage" description={usage ? `${fileSize(usage.stored_bytes)} stored · 500 MB library budget` : "Upload limits and storage budget"} className="library-storage">
-      {usage && <><p><strong>{fileSize(usage.stored_bytes)}</strong> stored · {fileSize(usage.allocated_bytes)} allocated of the <strong>500 MB library budget</strong></p><progress value={usage.allocated_bytes} max={usage.budget_bytes} aria-label="Library storage used" />
-        {usage.pending_uploads > 0 && <p>{usage.pending_uploads} incomplete upload{usage.pending_uploads === 1 ? " reserves" : "s reserve"} space. Remove incomplete entries to release it.</p>}
-        {usage.allocated_bytes >= 400_000_000 && <p className="portal-notice">Storage is over 80% full. Download and remove unneeded PDFs before adding more.</p>}
-        {usage.project_bytes >= 700_000_000 && <p className="portal-notice">Other project files are using storage too. Project usage is {fileSize(usage.project_bytes)}; new uploads stop before 800 MB.</p>}</>}
-      <p>Contracts: PDF up to 2 MB. Minutes and announcements: PDF up to 1 MB. Smaller text-based PDFs last longer; keep original copies in your HOA records.</p>
-    </WorkspaceSection>
+
     {message && <p className="portal-notice" role="status">{message}</p>}
-    <div className="portal-tabs"><button disabled={busy} aria-pressed={tab === "contacts"} onClick={() => setTab("contacts")}>Contacts &amp; contracts</button><button disabled={busy} aria-pressed={tab === "publications"} onClick={() => setTab("publications")}>Minutes &amp; announcements</button></div>
+    <nav className="portal-tabs leadership-task-tabs" aria-label="Leadership tasks">{([{id:"contacts",label:"Service contacts"},{id:"minutes",label:"Meeting minutes"},{id:"announcements",label:"Announcements"},{id:"calendar",label:"Meetings & events"}] as const).map(item=><button key={item.id} disabled={busy || Boolean(editingContact) || Boolean(editingPost)} aria-pressed={tab===item.id} onClick={()=>{setTab(item.id);setMessage("");}}>{item.label}</button>)}</nav>
     {tab === "contacts" ? <>
       <WorkspaceSection title="Service contacts" description={`${contacts.filter(contact => !contact.archived).length} active contacts`} defaultOpen><div className="portal-heading"><p>Your private HOA rolodex. Use any purpose.</p><button disabled={busy} onClick={() => setEditingContact("new")}>New contact</button></div>
         <label className="portal-search">Search contacts or purpose<input type="search" value={search} onChange={e => setSearch(e.target.value)} /></label>
@@ -151,6 +147,7 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
         <label>Website<input name="website" type="url" maxLength={500} placeholder="https://" defaultValue={contact?.website} /></label>
         <label>Address<input name="address" maxLength={500} defaultValue={contact?.address} /></label>
         <label>Notes<textarea name="notes" maxLength={5000} defaultValue={contact?.notes} /></label>
+        <p>Keep passwords and account numbers in this contact’s password safe rather than ordinary notes.</p>
         <label className="portal-checkbox"><input name="archived" type="checkbox" defaultChecked={contact?.archived} /> Archived contact (retains its contracts)</label>
         <div className="portal-actions"><button disabled={busy}>Save contact</button><button type="button" disabled={busy} onClick={() => setEditingContact(null)}>Cancel</button></div>
       </form></div>}
@@ -158,10 +155,11 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
         <dl className="library-contact-details">{selected.contact_person && <><dt>Contact person</dt><dd>{selected.contact_person}</dd></>}{selected.email && <><dt>Email</dt><dd><a href={`mailto:${encodeURIComponent(selected.email)}`}>{selected.email}</a></dd></>}{selected.phone && <><dt>Phone</dt><dd><a href={`tel:${selected.phone.replace(/[^+\d]/g, "")}`}>{selected.phone}</a></dd></>}{selected.website && <><dt>Website</dt><dd><a href={selected.website} target="_blank" rel="noopener noreferrer">{selected.website}</a></dd></>}{selected.address && <><dt>Address</dt><dd>{selected.address}</dd></>}</dl>
         {selected.notes && <p className="library-body">{selected.notes}</p>}<h3>Contracts</h3><FileList files={files.filter(f => f.contact_id === selected.id)} busy={busy} download={download} remove={remove} />
         {!selected.archived && <details key={selected.id}><summary>Add a contract PDF</summary><FileUpload contactId={selected.id} busy={busy} upload={upload} /></details>}
+        <ServicePasswordSafe key={selected.id} client={client} contactId={selected.id} archived={selected.archived}/>
       </WorkspaceSection>}
-    </> : <WorkspaceSection title="Member updates" description={`${posts.filter(post => post.published).length} published · ${posts.filter(post => !post.published).length} drafts`} defaultOpen><div className="portal-heading"><p>Published updates are visible to signed-in members. Drafts stay private to leadership.</p><button disabled={busy} onClick={() => setEditingPost("new")}>New minutes or announcement</button></div>
+    </> : tab === "calendar" ? <CalendarManager client={client}/> : <WorkspaceSection title={tab==="minutes"?"Meeting minutes":"Announcements"} description="Published member updates and private drafts" defaultOpen><div className="portal-heading"><p>{tab==="minutes"?"Keep meeting records and attach minutes PDFs.":"Post news and updates for members."} Published updates appear in the member library; drafts stay with leadership.</p><button disabled={busy || Boolean(editingPost)} onClick={() => setEditingPost("new")}>{tab==="minutes"?"New meeting minutes":"New announcement"}</button></div>
       {editingPost && <form className="portal-form" key={post?.id ?? "new"} onSubmit={savePublication}>
-        <label>Update type<select name="kind" defaultValue={post?.kind ?? "minutes"}><option value="minutes">Meeting minutes</option><option value="announcement">Announcement</option></select></label>
+        <label>Update type<select name="kind" defaultValue={post?.kind ?? (tab==="minutes"?"minutes":"announcement")}><option value="minutes">Meeting minutes</option><option value="announcement">Announcement</option></select></label>
         <label>Title<input name="title" required maxLength={180} defaultValue={post?.title} /></label>
         <label>Meeting or announcement date<input name="publication_date" type="date" required defaultValue={post?.publication_date ?? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())} /></label>
         <label>Text or summary<textarea name="body" maxLength={20000} defaultValue={post?.body} placeholder="Write an announcement here, or summarize the meeting minutes." /></label>
@@ -169,10 +167,17 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
         <label className="portal-checkbox"><input type="checkbox" name="published" defaultChecked={post ? post.published : true} /> Publish for signed-in members</label>
         <div className="portal-actions"><button disabled={busy}>{busy ? "Please wait…" : "Save update"}</button><button type="button" disabled={busy} onClick={() => setEditingPost(null)}>Cancel</button></div>
       </form>}
-      {posts.length ? posts.map(p => <article className="portal-review-card" key={p.id}><div className="portal-heading"><h3>{p.title}</h3><button disabled={busy} onClick={() => setEditingPost(p)}>Edit update</button></div><p>{p.kind === "minutes" ? "Minutes" : "Announcement"} · {displayDate(p.publication_date)} · <strong>{p.published ? "Published for members" : "Draft — leadership only"}</strong></p>
+      {posts.filter(p=>p.kind===(tab==="minutes"?"minutes":"announcement")).length ? posts.filter(p=>p.kind===(tab==="minutes"?"minutes":"announcement")).map(p => <article className="portal-review-card" key={p.id}><div className="portal-heading"><h3>{p.title}</h3><button disabled={busy || Boolean(editingPost)} onClick={() => setEditingPost(p)}>Edit update</button></div><p>{p.kind === "minutes" ? "Minutes" : "Announcement"} · {displayDate(p.publication_date)} · <strong>{p.published ? "Published for members" : "Draft — leadership only"}</strong></p>
         {p.body && <p className="library-body">{p.body}</p>}<FileList files={files.filter(f => f.publication_id === p.id)} busy={busy} download={download} remove={remove} />
         <details><summary>Add PDF attachment</summary><FileUpload publicationId={p.id} busy={busy} upload={upload} /></details>
       </article>) : <p>No updates yet. Add minutes or an announcement above.</p>}
     </WorkspaceSection>}
+    <WorkspaceSection title="File storage" description={usage ? `${fileSize(usage.stored_bytes)} stored · 500 MB library budget` : "Upload limits and storage budget"} className="library-storage">
+      {usage && <><p><strong>{fileSize(usage.stored_bytes)}</strong> stored · {fileSize(usage.allocated_bytes)} allocated of the <strong>500 MB library budget</strong></p><progress value={usage.allocated_bytes} max={usage.budget_bytes} aria-label="Library storage used" />
+        {usage.pending_uploads > 0 && <p>{usage.pending_uploads} incomplete upload{usage.pending_uploads === 1 ? " reserves" : "s reserve"} space. Remove incomplete entries to release it.</p>}
+        {usage.allocated_bytes >= 400_000_000 && <p className="portal-notice">Storage is over 80% full. Download and remove unneeded PDFs before adding more.</p>}
+        {usage.project_bytes >= 700_000_000 && <p className="portal-notice">Other project files are using storage too. Project usage is {fileSize(usage.project_bytes)}; new uploads stop before 800 MB.</p>}</>}
+      <p>Contracts: PDF up to 2 MB. Minutes and announcements: PDF up to 1 MB. Smaller text-based PDFs last longer; keep original copies in your HOA records.</p>
+    </WorkspaceSection>
   </>;
 }

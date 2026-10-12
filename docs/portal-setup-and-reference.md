@@ -106,7 +106,7 @@ Password recovery now returns to `https://plumcreekgardner.com/portal/reset-pass
 
 ## Migration state and validation
 
-Eight migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. Subsequent feature migrations were created and applied with the CLI after checking the pending-file dry run:
+Nine migrations are installed. The first four were created with the CLI, then file version prefixes were reconciled to versions returned by the MCP migration tool, avoiding duplicate migration attempts later. Subsequent feature migrations were created and applied with the CLI after checking the pending-file dry run:
 
 | Recorded version | Migration |
 | --- | --- |
@@ -118,12 +118,15 @@ Eight migrations are installed. The first four were created with the CLI, then f
 | `20261012172745` | `private_member_resources` |
 | `20261012183531` | `rental_member_access` |
 | `20261012185831` | `rental_review_index` |
+| `20261012190718` | `member_details_events_and_service_vault` |
 
 These require the installed original HOA schema and companion contact-import setup. Do not reset production or rerun its original creation SQL. Reference SQL is unchanged. Public seed generation reads only `Info/Board.txt` and `Info/Leadership2026.json`, using source-key lookups rather than hardcoded production UUIDs.
 
 Checks include build/TypeScript, ESLint, rendered HTML, actual migrations executed in isolated PGlite PostgreSQL with Supabase role/claim fixtures, live read-only HTTP roster/private-access and email-confirmation checks, and Supabase advisors. PGlite uses PostgreSQL 18; production uses PostgreSQL 17. A real confirmed-account/MFA browser test remains pending the first administrator's login.
 
 The contacts/documents update introduced no new security advisor findings. The baseline has a leaked-password-protection warning (the free plan does not include that feature). [RLS-without-policy information notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) are intentional for private/helper and locked original tables: access uses narrow authorized functions. Original contact/rental foreign-key index findings are recorded in the initial review. New feature foreign keys are indexed. Unused indexes are retained pending real usage.
+
+See [member details, calendar and password safe guide](member-details-calendar-and-safe.md) for structured contact fields, joint ownership/trust records, email-change confirmation, notice consent, calendar publishing and restricted encrypted service credentials.
 
 See [contacts and documents guide](leadership-contacts-and-documents.md) for access, upload limits, storage math and verification details.
 

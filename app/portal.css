@@ -79,3 +79,14 @@
 .rental-files { list-style: none; padding: 0; }
 .rental-files li { padding: .85rem; margin: .65rem 0; border: 1px solid #d5dde6; background: #f6f8fb; border-radius: 5px; overflow-wrap: anywhere; }
 .rental-upload { margin-top: 1rem; }
+.household-property { margin: 12px 0; border: 1px solid var(--line); padding: 12px; border-radius: 5px; }
+.household-property > summary, .service-password-safe > summary { cursor: pointer; font-weight: 700; }
+.household-member { border: 1px solid var(--line); padding: 12px; border-radius: 4px; display: grid; gap: 12px; min-width: 0; }
+.portal-app .notice-consent { align-items: flex-start; }
+.portal-app .notice-consent input { flex-shrink: 0; }
+.service-password-safe { padding: 14px 0; margin-top: 14px; border-top: 1px solid var(--line); }
+.credential-reveal { background: #fff8e4; padding: 12px; margin: 12px 0; border: 1px solid #d1bf82; border-radius: 5px; }
+.credential-reveal dt { font-weight: 700; font-size: 12px; }
+.credential-value { margin: 4px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: monospace; }
+.portal-app .leadership-task-tabs { margin: 14px 0; flex-wrap: wrap; }
+.portal-app .calendar-editor { padding: 12px; border: 1px solid var(--line); margin-bottom: 16px; }

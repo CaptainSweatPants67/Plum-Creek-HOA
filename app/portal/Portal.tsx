@@ -14,6 +14,8 @@ import { MemberResources } from "./MemberResources";
 import { SectionControls, WorkspaceSection } from "./WorkspaceSection";
 import { RentalWorkspace } from "./RentalWorkspace";
 import { MemberAccessGate } from "./MemberAccessGate";
+import { CalendarManager } from "./CalendarManager";
+import { PropertyHouseholds } from "./PropertyHouseholds";
 
 type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean };
 type Code = { passcode: string; enabled: boolean; updated_at: string };
@@ -185,7 +187,7 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     </div> : <>
       <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setCode(null); setMessage(""); }}>Sign out</button></div>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
-        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">My information &amp; properties</Link><Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>{leadership && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">Membership &amp; leadership</Link>}{(flags?.is_director || flags?.is_officer) && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Contacts &amp; member updates</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
+        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">My information &amp; properties</Link><Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>{leadership && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{(flags?.is_director || flags?.is_officer) && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
       </div>
       <SectionControls />
       {leadership && !flags.has_mfa && <div className="portal-panel"><h2>Verify your leadership login</h2><p>MFA is required to view the homeowner signup passcode or manage appointments.</p>
@@ -205,6 +207,8 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
       {view === "admin" && flags?.can_manage_leadership && <LeadershipManager key={`leadership-${session.user.id}`} client={client} />}
       {view === "admin" && flags?.can_view_signup_code && <StaffWorkspace key={`staff-${session.user.id}`} client={client} userId={session.user.id} onChanged={() => setRentalRevision(v => v + 1)} />}
       {view === "admin" && flags?.can_view_signup_code && <RentalWorkspace key={`rental-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
+      {view === "admin" && flags?.can_view_signup_code && <PropertyHouseholds key={`households-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
+      {view === "admin" && flags?.can_view_signup_code && <CalendarManager key={`calendar-staff-${session.user.id}`} client={client} defaultOpen={false} />}
       {view === "admin" && flags && !leadership && <div className="portal-panel"><h2>Leadership access required</h2><p>This page is available to assigned Directors, Officers, and system administrators. You can manage your own information on the member page.</p></div>}
     </>}
   </section>;

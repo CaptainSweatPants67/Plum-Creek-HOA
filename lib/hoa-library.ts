@@ -7,7 +7,7 @@ export type Publication = { id: string; kind: "minutes" | "announcement"; title:
 export type LibraryFile = { id: string; contact_id: string | null; publication_id: string | null; bucket_id: string; storage_path: string; title: string; original_filename: string; expected_bytes: number; reserved_bytes: number; ready: boolean; starts_on: string | null; ends_on: string | null; created_at: string };
 export type LibraryUsage = { budget_bytes: number; allocated_bytes: number; stored_bytes: number; project_bytes: number; pending_uploads: number };
 
-export async function loadLibraryRows<T>(client: SupabaseClient, table: "hoa_service_contacts" | "hoa_publications" | "hoa_library_files", order: string, ascending: boolean, filters: Record<string, boolean> = {}) {
+export async function loadLibraryRows<T>(client: SupabaseClient, table: "hoa_service_contacts" | "hoa_publications" | "hoa_library_files" | "hoa_events", order: string, ascending: boolean, filters: Record<string, boolean> = {}) {
   const rows: T[] = [];
   for (let offset = 0; ; offset += 500) {
     let query = client.from(table).select("*").order(order, { ascending }).order("id").range(offset, offset + 499);

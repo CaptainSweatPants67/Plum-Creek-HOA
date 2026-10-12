@@ -16,7 +16,15 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(`create role anon; create role authenticated; create role supabase_auth_admin;
     create schema auth; create schema storage;
     create table auth.users(id uuid primary key, email text unique, email_confirmed_at timestamptz, is_anonymous boolean default false,
-      raw_app_meta_data jsonb default '{"provider":"email"}', raw_user_meta_data jsonb default '{}');
+      email_change text default '',raw_app_meta_data jsonb default '{"provider":"email"}', raw_user_meta_data jsonb default '{}');
+    create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id),aal text,not_after timestamptz);
+    create schema vault;
+    -- API/permission stand-in only. Encryption is checked against real hosted Vault.
+    create table vault.secrets(id uuid primary key default gen_random_uuid(),secret text,name text,description text);
+    create view vault.decrypted_secrets as select id,secret as decrypted_secret from vault.secrets;
+    create function vault.create_secret(new_secret text,new_name text default null,new_description text default null) returns uuid language sql as $$
+      insert into vault.secrets(secret,name,description) values(new_secret,new_name,new_description) returning id; $$;
+    create function vault.update_secret(secret_id uuid,new_secret text) returns void language sql as $$update vault.secrets set secret=new_secret where id=secret_id;$$;
   `);
   // Match Supabase's signed-token helpers, with claims supplied by test fixtures.
   await db.exec(`create function auth.uid() returns uuid language sql stable as $$select (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid$$;
@@ -41,8 +49,9 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("private_member_resources"));
   await db.exec(await migration("rental_member_access"));
   await db.exec(await migration("rental_review_index"));
-  async function asRole(role, uid, aal, fn) {
-    await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, user_metadata: { role: "admin", is_director: true } } : {})]);
+  await db.exec((await migration("member_details_events_and_service_vault")).replace('create extension if not exists supabase_vault with schema vault;',''));
+  async function asRole(role, uid, aal, fn, claims = {}) {
+    await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
     try { return await fn(); } finally { await db.exec("reset role"); await db.exec("select set_config('request.jwt.claims','{}',false)"); }
   }
@@ -531,4 +540,109 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     });
     await asRole('authenticated',staff,'aal2',async()=>assert.equal((await scalar('select public.get_staff_rental_workspace()')).properties.find(p=>p.request_id===requestB).files[0].id,lease.id));
   });
+  await t.test('structured profiles and notice consent use only the confirmed owner and server timestamps',async()=>{
+    const details={first_name:'Sample',last_name:'Owner',mailing_street:'123 Fixture Lane',mailing_city:'Gardner',mailing_state:'KS',mailing_postal_code:'66030',mailing_country:'US',user_id:admin};
+    await asRole('anon',null,null,()=>assert.rejects(db.query('select public.get_member_profile()'),/permission denied/));
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      assert.equal((await scalar('select public.get_member_profile()')).notice_consent,false);
+      await db.query('select public.save_member_profile($1,true)',[JSON.stringify(details)]);
+      const profile=await scalar('select public.get_member_profile()');
+      assert.equal(profile.details.first_name,'Sample');assert.equal(profile.details.mailing_postal_code,'66030');assert.equal(profile.details.user_id,homeowner);
+      assert.equal(profile.notice_consent,true);assert.ok(profile.consented_at);assert.equal(profile.email,'homeowner@example.test');
+      await db.query('select public.save_member_profile($1,true)',[JSON.stringify(details)]);
+      await assert.rejects(db.query('select * from private.email_notice_preferences'),/permission denied/);
+      await assert.rejects(db.query('select public.save_member_profile($1,true)',[JSON.stringify({...details,last_name:''})]),/first and last names/);
+    });
+    assert.equal(await scalar('select count(*) from private.email_notice_history where user_id=$1',[homeowner]),1);
+    assert.equal(await scalar('select email_at_consent from private.email_notice_preferences where user_id=$1',[homeowner]),'homeowner@example.test');
+    await asRole('authenticated',homeowner,'aal1',()=>db.query('select public.save_member_profile($1,false)',[JSON.stringify(details)]));
+    assert.equal(await scalar('select count(*) from private.email_notice_history where user_id=$1',[homeowner]),2);
+    assert.equal(await scalar('select consented_at from private.email_notice_preferences where user_id=$1',[homeowner]),null);
+    assert.equal(await scalar("select display_name from public.contacts where display_name='Historical contact'"),'Historical contact');
+    await asRole('authenticated',staff,'aal2',async()=>{
+      const r=(await scalar('select public.get_staff_workspace()')).requests.find(r=>r.user_id===homeowner);assert.equal(r.email_notice_consent,false);
+    });
+  });
+  let householdRequest;
+  await db.exec("insert into public.properties(id,lot_number,street_address) values('00000000-0000-4000-8000-000000000025',5,'Household fixture')");
+  await asRole('authenticated',homeowner,'aal1',async()=>{householdRequest=await scalar("select public.request_property_verification('00000000-0000-4000-8000-000000000025','owner','Current fixture',false)");});
+  await t.test('household members and trust details are private records and confer no account or ownership access',async()=>{
+    const details={additional_members:[{first_name:'Joint',last_name:'Owner',relationship:'co_owner',email:'joint@example.test'}],is_trust:true,trust_name:'Fixture Family Trust',decision_first_name:'Decision',decision_last_name:'Maker'};
+    await asRole('authenticated',homeowner,'aal1',async()=>{
+      await db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify(details)]);
+      const row=(await scalar('select public.get_property_households()')).properties.find(p=>p.request_id===householdRequest);
+      assert.equal(row.household.trust_name,'Fixture Family Trust');assert.equal(row.household.additional_members.length,1);
+      await assert.rejects(db.query('select public.save_property_household($1,$2)',[administratorRequest,JSON.stringify(details)]),/own active/);
+      await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,trust_name:''})]),/trust name/);
+      await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,additional_members:[{...details.additional_members[0],role:'admin'}]})]),/first name/);
+      await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,additional_members:Array(11).fill(details.additional_members[0])})]),/at most ten/);
+      await assert.rejects(db.query('select public.get_staff_property_households()'),/Authorized account/);
+    });
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify(details)]),/own active/));
+    await asRole('authenticated',staff,'aal2',async()=>assert.ok((await scalar('select public.get_staff_property_households()')).properties.some(p=>p.household.trust_name==='Fixture Family Trust')));
+    assert.equal(await scalar("select count(*) from auth.users where email='joint@example.test'"),0);
+    assert.equal(await scalar('select status from private.property_access_requests where id=$1',[householdRequest]),'pending');
+  });
+  await t.test('calendar publishing enforces staff MFA, public/member visibility and drafts at database level',async()=>{
+    let event;
+    await asRole('authenticated',homeowner,'aal2',()=>assert.rejects(db.query("insert into public.hoa_events(title,event_date) values('Unauthorized',current_date+1)"),/row-level security|Leadership with MFA/));
+    await asRole('authenticated',staff,'aal1',()=>assert.rejects(db.query("insert into public.hoa_events(title,event_date) values('Unauthorized',current_date+1)"),/row-level security|Leadership with MFA/));
+    await asRole('authenticated',staff,'aal2',async()=>{
+      event=await scalar("insert into public.hoa_events(title,event_date,published,created_by) values('Calendar fixture',current_date+1,true,$1) returning id",[homeowner]);
+      assert.equal(await scalar('select created_by from public.hoa_events where id=$1',[event]),staff);
+    });
+    await asRole('anon',null,null,async()=>{assert.ok((await scalar('select public.get_public_events()')).some(e=>e.id===event));await assert.rejects(db.query('select public.get_member_events()'),/permission denied/);});
+    await asRole('authenticated',admin,'aal2',()=>db.query("update public.hoa_events set visibility='members',cancelled=true where id=$1",[event]));
+    await asRole('anon',null,null,async()=>{assert.equal((await scalar('select public.get_public_events()')).some(e=>e.id===event),false);assert.equal(await scalar('select count(*) from public.hoa_events where id=$1',[event]),0);});
+    await asRole('authenticated',homeowner,'aal1',async()=>assert.equal((await scalar('select public.get_member_events()')).find(e=>e.id===event).cancelled,true));
+    await db.query('update private.property_access_requests set declared_rental=true where id=$1',[householdRequest]);
+    await asRole('authenticated',homeowner,'aal1',async()=>{await assert.rejects(db.query('select public.get_member_events()'),/rental paperwork/);assert.equal(await scalar('select count(*) from public.hoa_events where id=$1',[event]),0);});
+    await db.query('update private.property_access_requests set declared_rental=false where id=$1',[householdRequest]);
+    await asRole('authenticated',staff,'aal2',()=>db.query('update public.hoa_events set published=false where id=$1',[event]));
+    await asRole('authenticated',homeowner,'aal1',async()=>assert.equal((await scalar('select public.get_member_events()')).some(e=>e.id===event),false));
+    assert.equal(await scalar("select count(*) from public.hoa_events where source_key='events-txt:2026-10-09:Annual Meeting'"),1);
+  });
+  const vaultSession='00000000-0000-4000-8000-000000000099';
+  await db.query("insert into auth.sessions(id,user_id,aal) values($1,$2,'aal2')",[vaultSession,admin]);
+  const vaultClaims=(age=0)=>({session_id:vaultSession,amr:[{method:'totp',timestamp:Math.floor(Date.now()/1000)-age}]});
+  await t.test('safe requires administrator, live MFA session, fresh authenticator verification and timed unlock',async()=>{
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.unlock_service_vault()'),/active session/));
+    await asRole('authenticated',admin,'aal1',()=>assert.rejects(db.query('select public.unlock_service_vault()'),/Administrator/),vaultClaims());
+    await asRole('authenticated',staff,'aal2',()=>assert.rejects(db.query('select public.unlock_service_vault()'),/Administrator/),vaultClaims());
+    await asRole('authenticated',homeowner,'aal2',()=>assert.rejects(db.query('select public.unlock_service_vault()'),/Administrator/),vaultClaims());
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.unlock_service_vault()'),/fresh authenticator/),vaultClaims(120));
+    await asRole('authenticated',admin,'aal2',async()=>{
+      await assert.rejects(db.query('select public.list_service_credentials($1)',[serviceContact]),/Unlock/);
+      await db.query('select public.unlock_service_vault()');assert.equal((await scalar('select public.get_service_vault_status()')).unlocked,true);
+    },vaultClaims());
+  });
+  await db.query('update public.hoa_service_contacts set archived=false where id=$1',[serviceContact]);
+  let credential;
+  await t.test('credential CRUD exposes plaintext only on reveal and excludes it from metadata and audit logs',async()=>{
+    const values={username:'fixture-user',password:'fixture-secret-only',account_number:'fixture-account-only'};
+    await asRole('authenticated',admin,'aal2',async()=>{
+      credential=await scalar('select public.save_service_credential(null,$1,$2,$3)',[serviceContact,'Fixture service login',JSON.stringify(values)]);
+      const listing=await scalar('select public.list_service_credentials($1)',[serviceContact]);assert.equal(listing.find(c=>c.id===credential).title,'Fixture service login');assert.ok(!JSON.stringify(listing).includes(values.password));
+      assert.deepEqual(await scalar('select public.reveal_service_credential($1)',[credential]),values);
+      await assert.rejects(db.query('select secret from vault.secrets'),/permission denied/);
+      await assert.rejects(db.query('select * from vault.decrypted_secrets'),/permission denied/);
+      await assert.rejects(db.query('select public.save_service_credential($1,$2,$3,$4)',[credential,'00000000-0000-4000-8000-000000000111','Wrong contact',JSON.stringify(values)]),/active service contact/);
+      await assert.rejects(db.query('select public.save_service_credential(null,$1,$2,$3)',[serviceContact,'Bad shape',JSON.stringify({secret_id:'bad'})]),/valid service/);
+      await db.query('select public.save_service_credential($1,$2,$3,$4)',[credential,serviceContact,'Updated fixture',JSON.stringify({...values,username:'changed-fixture'})]);
+      assert.equal((await scalar('select public.reveal_service_credential($1)',[credential])).username,'changed-fixture');
+    },vaultClaims());
+    assert.equal(await scalar("select count(*) from private.leadership_audit where details::text like '%fixture-secret-only%' or details::text like '%fixture-account-only%'"),0);
+    await db.query("update private.service_vault_unlocks set unlocked_until=now()-interval '1 second' where session_id=$1",[vaultSession]);
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.reveal_service_credential($1)',[credential]),/Unlock/),vaultClaims());
+    await asRole('authenticated',admin,'aal2',()=>db.query('select public.unlock_service_vault()'),vaultClaims());
+    await db.query("delete from public.user_roles where user_id=$1 and role='admin'",[admin]);
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.reveal_service_credential($1)',[credential]),/Unlock/),vaultClaims());
+    await db.query("insert into public.user_roles(user_id,role) values($1,'admin')",[admin]);
+    await db.query('delete from auth.sessions where id=$1',[vaultSession]);
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.reveal_service_credential($1)',[credential]),/Unlock/),vaultClaims());
+    await db.query("insert into auth.sessions(id,user_id,aal) values($1,$2,'aal2')",[vaultSession,admin]);
+    await asRole('authenticated',admin,'aal2',async()=>{await db.query('select public.unlock_service_vault()');await db.query('select public.remove_service_credential($1)',[credential]);await db.query('select public.lock_service_vault()');assert.equal((await scalar('select public.get_service_vault_status()')).unlocked,false);},vaultClaims());
+    assert.equal(await scalar('select count(*) from private.service_credentials where id=$1',[credential]),0);assert.equal(await scalar('select count(*) from vault.secrets'),0);
+  });
+
 });

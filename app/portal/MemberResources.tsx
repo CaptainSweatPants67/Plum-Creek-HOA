@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeadershipRoster } from "../../lib/leadership-types";
 import { WorkspaceSection } from "./WorkspaceSection";
+import { EventList } from "../events/EventList";
 
 export function MemberResources({ client }: { client: SupabaseClient }) {
   const [history, setHistory] = useState<LeadershipRoster | null>(null);
@@ -38,6 +39,7 @@ export function MemberResources({ client }: { client: SupabaseClient }) {
   const years = [...new Set(records.map(row => row.year))].sort((a, b) => b - a);
   const visible = records.filter(row => (year === "all" || row.year === Number(year)) && `${row.name} ${row.position}`.toLowerCase().includes(search.toLowerCase()));
   return <>
+    <WorkspaceSection title="Meetings & events" description="Public dates and member-only calendar entries" sectionId="member-events" defaultOpen><EventList client={client} member /></WorkspaceSection>
     {message && <p role="status" className="portal-notice">{message}</p>}
     <WorkspaceSection title="Association bylaws" description="Member-only governing document" defaultOpen><div className="portal-heading"><p>Rules for how Plum Creek HOA is organized and governed. PDF · approximately 3.6 MB.</p><button disabled={busy} onClick={downloadBylaws}>{busy ? "Downloading…" : "Download bylaws PDF"}</button></div></WorkspaceSection>
     <WorkspaceSection title="Board & Officer history" description="Search past service by year and name"><button onClick={() => setLoadHistory(true)} disabled={loadHistory}>Load leadership history</button>

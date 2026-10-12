@@ -1,0 +1,3 @@
+export type HoaEvent = { id: string; kind: "meeting" | "event"; title: string; event_date: string; start_time: string | null; end_time: string | null; location: string; address: string; details: string; visibility: "public" | "members"; cancelled: boolean; published?: boolean };
+export function eventDate(date: string) { return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`)); }
+export function eventTime(time: string | null) { if (!time) return ""; return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(`2000-01-01T${time.length===5?`${time}:00`:time}Z`)); }

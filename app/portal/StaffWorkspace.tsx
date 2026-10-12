@@ -3,7 +3,7 @@
 import { useEffect,useState,type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WorkspaceSection } from "./WorkspaceSection";
-type Request={id:string;user_id:string;display_name:string;email:string;phone:string;mailing_address:string;lot_number:number;street_address:string;status:string;relationship:string;request_note:string;review_note:string};
+type Request={id:string;user_id:string;display_name:string;email:string;phone:string;mailing_address:string;lot_number:number;street_address:string;status:string;relationship:string;request_note:string;review_note:string;email_notice_consent?:boolean;email_notice_consented_at?:string};
 type Property={id:string;lot_number:number;street_address:string;occupancy_status:string;verified_contacts:{display_name:string;relationship:string}[];historical_contacts:{display_name:string;verification:string}[]};
 type Workspace={requests:Request[];properties:Property[]};
 
@@ -27,6 +27,7 @@ export function StaffWorkspace({client,userId,onChanged}:{client:SupabaseClient;
       <label className="portal-search">Review status<select value={requestStatus} onChange={event=>setRequestStatus(event.target.value)}><option value="pending">Pending requests</option><option value="approved">Approved access</option><option value="rejected">Rejected requests</option><option value="revoked">Revoked access</option><option value="all">All requests</option></select></label>
       {!workspace?<p>Loading staff information…</p>:visibleRequests.length===0?<p>No requests with this status.</p>:visibleRequests.map((request)=><article className="portal-review-card" key={request.id}>
         <h3>{request.display_name} — Lot {request.lot_number}</h3><p>{request.street_address}<br/>{request.email} · {request.phone||"No phone provided"}<br/>{request.mailing_address||"No mailing address provided"}</p>
+        <p>Email-notice consent: <strong>{request.email_notice_consent?"Consented":"No consent recorded"}</strong>{request.email_notice_consent&&request.email_notice_consented_at?` · ${new Date(request.email_notice_consented_at).toLocaleString()}`:""}</p>
         <p>Requested as {request.relationship.replaceAll("_"," ")} · <strong>{request.status}</strong></p><p>{request.request_note}</p>{request.review_note&&<p>Previous review: {request.review_note}</p>}
         {request.user_id!==userId && ["pending","approved"].includes(request.status)?<form className="portal-form" onSubmit={(event)=>review(event,request.id)}>
           <label>Decision<select name="decision">{request.status==="pending"?<><option value="approved">Approve ownership</option><option value="rejected">Reject request</option></>:<option value="revoked">Revoke property access</option>}</select></label>

@@ -6,14 +6,17 @@ import { validatePdf } from "../../lib/hoa-library";
 import { RENTAL_MAX_BYTES, rentalError, uploadRentalAgreement } from "../../lib/rental-agreements";
 import { RentalWorkspace } from "./RentalWorkspace";
 import { WorkspaceSection } from "./WorkspaceSection";
+import { EmailChange } from "./EmailChange";
+import { PropertyHouseholds } from "./PropertyHouseholds";
+import { NOTICE_CONSENT, type MemberDetails, type MemberProfile } from "../../lib/member-profile";
 
 type Property = { id: string; lot_number: number; street_address: string; occupancy_status?: string; relationship?: string; is_rental?: boolean };
 type Request = { id: string; lot_number: number; street_address: string; status: string; relationship: string; review_note: string };
-type Details = { display_name: string; phone: string; mailing_address: string };
 type Workspace = { properties: Property[]; requests: Request[] };
 
 export function MemberWorkspace({ client, userId, email }: { client: SupabaseClient; userId: string; email: string }) {
-  const [details,setDetails]=useState<Details|null>(null);
+  const [details,setDetails]=useState<MemberDetails|null>(null);
+  const [profile,setProfile]=useState<MemberProfile|null>(null);
   const [workspace,setWorkspace]=useState<Workspace>({properties:[],requests:[]});
   const [choices,setChoices]=useState<Property[]>([]);
   const [loaded,setLoaded]=useState(false);
@@ -26,16 +29,17 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   const rental=declaredRental||selectedRental;
   useEffect(()=>{
     let active=true;
-    void Promise.all([client.from("portal_account_details").select("display_name,phone,mailing_address").eq("user_id",userId).maybeSingle(),client.rpc("get_member_workspace"),client.rpc("get_property_choices")]).then(([profile,member,properties])=>{
+    void Promise.all([client.rpc("get_member_profile"),client.rpc("get_member_workspace"),client.rpc("get_property_choices")]).then(([profile,member,properties])=>{
       if(!active)return;
       if(profile.error || member.error || properties.error) {setMessage("Member information could not be loaded. Confirm your email and try again.");return;}
-      setDetails(profile.data as Details|null);setWorkspace(member.data as Workspace);setChoices(properties.data as Property[]);setLoaded(true);
+      const current=profile.data as MemberProfile;setProfile(current);setDetails(current.details);setWorkspace(member.data as Workspace);setChoices(properties.data as Property[]);setLoaded(true);
     });
     return()=>{active=false;};
-  },[client,userId,revision]);
+  },[client,userId,email,revision]);
   async function saveDetails(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
-    const result=await client.from("portal_account_details").upsert({user_id:userId,display_name:String(data.get("display_name")).trim(),phone:String(data.get("phone")).trim(),mailing_address:String(data.get("mailing_address")).trim()}).select("user_id").single();
+    const fields=Object.fromEntries(["first_name","last_name","phone","mailing_street","mailing_unit","mailing_city","mailing_state","mailing_postal_code","mailing_country"].map(name=>[name,String(data.get(name)??"").trim()]));
+    const result=await client.rpc("save_member_profile",{p_details:fields,p_notice_consent:data.has("notice_consent")});
     setBusy(false);setMessage(result.error?result.error.message:"Current contact information saved. Property ownership still requires separate approval.");
     if(!result.error)setRevision((v)=>v+1);
   }
@@ -56,14 +60,22 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   return <>
     {message&&<p className="portal-notice" role="status">{message}</p>}
     <WorkspaceSection title="Your current contact information" description="Keep your name, phone, and mailing address current" defaultOpen><p>Use your individual information. Historical household records are not used to verify your account.</p>
-      {!loaded?<p>Loading member information…</p>:<form key={JSON.stringify(details)} onSubmit={saveDetails} className="portal-form">
-        <label>Full name<input name="display_name" autoComplete="name" maxLength={160} defaultValue={details?.display_name??""} required/></label>
-        <label>Confirmed login email<input value={email} readOnly type="email"/></label>
+      {!loaded?<p>Loading member information…</p>:<form key={JSON.stringify([details,profile?.notice_consent])} onSubmit={saveDetails} className="portal-form">
+        {details?.display_name&&!details.first_name&&<p>Previously saved name: {details.display_name}. Please enter your first and last names below.</p>}
+        <div className="portal-form-row"><label>First name<input name="first_name" autoComplete="given-name" maxLength={80} defaultValue={details?.first_name??""} required/></label><label>Last name<input name="last_name" autoComplete="family-name" maxLength={80} defaultValue={details?.last_name??""} required/></label></div>
+        <label>Confirmed login email<input value={profile?.email||email} readOnly type="email"/></label>
         <label>Phone<input name="phone" type="tel" autoComplete="tel" maxLength={50} defaultValue={details?.phone??""}/></label>
-        <label>Mailing address<textarea name="mailing_address" autoComplete="street-address" maxLength={500} defaultValue={details?.mailing_address??""}/></label>
+        {details?.mailing_address&&!details.mailing_street&&<p>Previously saved address: {details.mailing_address}. Enter its separate fields below.</p>}
+        <label>Mailing street address<input name="mailing_street" autoComplete="address-line1" maxLength={180} defaultValue={details?.mailing_street??""}/></label>
+        <label>Apartment / unit (optional)<input name="mailing_unit" autoComplete="address-line2" maxLength={60} defaultValue={details?.mailing_unit??""}/></label>
+        <div className="portal-form-row"><label>City<input name="mailing_city" autoComplete="address-level2" maxLength={100} defaultValue={details?.mailing_city??""}/></label><label>State / province<input name="mailing_state" autoComplete="address-level1" maxLength={80} defaultValue={details?.mailing_state??""}/></label><label>ZIP / postal code<input name="mailing_postal_code" autoComplete="postal-code" maxLength={20} defaultValue={details?.mailing_postal_code??""}/></label></div>
+        <label>Country<input name="mailing_country" autoComplete="country-name" maxLength={80} defaultValue={details?.mailing_country??"US"}/></label>
+        <label className="portal-checkbox notice-consent"><input type="checkbox" name="notice_consent" defaultChecked={profile?.notice_consent??false}/>{NOTICE_CONSENT}</label>
+        <p>Optional. Uncheck and save to withdraw email-notice consent. Your current confirmed login email will be used.</p>
         <button disabled={busy}>Save contact information</button>
       </form>}
     </WorkspaceSection>
+    <EmailChange client={client} email={profile?.email||email} pendingEmail={profile?.pending_email} onChanged={()=>setRevision(v=>v+1)}/>
     <WorkspaceSection title="Your approved properties" description="Verified property details" defaultOpen>
       {workspace.properties.length===0?<p>No property details are available. Ownership approval and current paperwork for rental homes are required. Check your requests and rental forms below.</p>:workspace.properties.map((property)=><article className="rental-property" key={property.id}><span>Lot {property.lot_number}</span><h3>{property.street_address}</h3><p>{property.relationship?.replaceAll("_"," ")} · {property.occupancy_status?.replaceAll("_"," ")}</p></article>)}
       <p>Approval provides access to your property information. Formal voting eligibility is handled separately.</p>
@@ -80,5 +92,6 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
       <h3>Your requests</h3>{workspace.requests.length===0?<p>No requests submitted.</p>:<div className="history-table-wrap"><table><thead><tr><th>Property</th><th>Status</th><th>Reviewer response</th></tr></thead><tbody>{workspace.requests.map((request)=><tr key={request.id}><td>Lot {request.lot_number}<br/>{request.street_address}</td><td>{request.status}</td><td>{request.review_note||"Awaiting review"}</td></tr>)}</tbody></table></div>}
     </WorkspaceSection>
     <RentalWorkspace client={client} revision={revision} onChanged={()=>setRevision(v=>v+1)}/>
+    <PropertyHouseholds client={client} revision={revision}/>
   </>;
 }
