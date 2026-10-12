@@ -50,6 +50,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration("rental_member_access"));
   await db.exec(await migration("rental_review_index"));
   await db.exec((await migration("member_details_events_and_service_vault")).replace('create extension if not exists supabase_vault with schema vault;',''));
+  await db.exec(await migration('household_value_validation'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -576,6 +577,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
       await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,trust_name:''})]),/trust name/);
       await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,additional_members:[{...details.additional_members[0],role:'admin'}]})]),/first name/);
       await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,additional_members:Array(11).fill(details.additional_members[0])})]),/at most ten/);
+      await assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify({...details,additional_members:[{...details.additional_members[0],email:{unexpected:'object'}}]})]),/first name/);
       await assert.rejects(db.query('select public.get_staff_property_households()'),/Authorized account/);
     });
     await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query('select public.save_property_household($1,$2)',[householdRequest,JSON.stringify(details)]),/own active/));

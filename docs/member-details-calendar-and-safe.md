@@ -1,6 +1,6 @@
 # Member details, calendar and service password safe
 
-Updated October 12, 2026. The additive `20261012190718_member_details_events_and_service_vault` migration is installed on `vjkdffiwgpoyrhbivfsa`. Existing historical contacts and names/addresses remain intact and unverified.
+Updated October 12, 2026. The additive `20261012190718_member_details_events_and_service_vault` and `20261012193614_household_value_validation` migrations are installed on `vjkdffiwgpoyrhbivfsa`. Existing historical contacts and names/addresses remain intact and unverified.
 
 ## Member forms
 
