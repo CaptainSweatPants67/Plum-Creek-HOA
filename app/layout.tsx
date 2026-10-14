@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteChrome } from "./components/SiteChrome";
 import "./globals.css";
+import "./public.css";
 import "./portal.css";
 
 const siteUrl =

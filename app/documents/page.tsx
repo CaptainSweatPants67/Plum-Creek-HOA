@@ -80,18 +80,12 @@ export default function DocumentsPage() {
 
       <section className="documents-section documents-page-section">
         <p className="portal-notice">Association bylaws and leadership history are available in the <Link href="/member-documents/">member library</Link> after signing in.</p>
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">Official records</p>
-            <h2>Community documents</h2>
-          </div>
-          <p>Select any document below to save a PDF copy to your device.</p>
-        </div>
+        <p className="document-intro">Select any document below to save a PDF copy to your device.</p>
 
         <div className="document-group">
           <div className="group-heading">
             <span>01</span>
-            <h3>Governing documents</h3>
+            <h2>Governing documents</h2>
           </div>
           <div className="document-grid">
             {governingDocuments.map((document) => (
@@ -103,7 +97,7 @@ export default function DocumentsPage() {
         <div className="document-group">
           <div className="group-heading">
             <span>02</span>
-            <h3>Plat maps</h3>
+            <h2>Plat maps</h2>
           </div>
           <div className="document-grid">
             {platMaps.map((document) => (

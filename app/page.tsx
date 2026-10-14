@@ -5,32 +5,28 @@ import Link from "next/link";
 
 const destinations = [
   {
-    number: "01",
     title: "Pay Your Dues",
     description:
-      "Review the 2026 dues amount, check mailing address, Venmo total, and payment deadline.",
+      "Payment amounts, mailing instructions, Venmo details, and deadlines.",
     href: "/dues/",
     linkLabel: "View payment instructions",
     featured: true,
   },
   {
-    number: "02",
     title: "Neighborhood Map & HOA Tracts",
     description:
-      "Explore the neighborhood map and learn about the eight shared tracts owned and maintained by the HOA.",
+      "Explore the neighborhood map, shared ponds, and eight HOA tracts.",
     href: "/neighborhood-map/",
     linkLabel: "Explore the neighborhood",
   },
   {
-    number: "03",
     title: "HOA Documents",
     description:
-      "Download the recorded restrictions, ratifying declarations, and neighborhood plat maps.",
+      "Download restrictions, declarations, and neighborhood plat maps.",
     href: "/documents/",
     linkLabel: "View HOA documents",
   },
   {
-    number: "04",
     title: "Board of Directors",
     description:
       "Meet the current Plum Creek Board of Directors and HOA officers.",
@@ -38,34 +34,30 @@ const destinations = [
     linkLabel: "Meet the Board",
   },
   {
-    number: "05",
     title: "HOA Committees",
     description:
-      "See each committee's purpose, responsibilities, current members, and ways homeowners can help.",
+      "Committee responsibilities, current members, and ways to help.",
     href: "/committees/",
     linkLabel: "Explore committees",
   },
   {
-    number: "06",
     title: "Community Events",
     description:
-      "Find upcoming HOA meetings, neighborhood gatherings, locations, and important dates.",
+      "Upcoming HOA meetings, neighborhood gatherings, and locations.",
     href: "/events/",
     linkLabel: "View upcoming events",
   },
   {
-    number: "07",
     title: "Volunteer",
     description:
-      "Share your interests and availability with the Board to help with a committee or neighborhood project.",
+      "Share your interests and availability for neighborhood projects.",
     href: "/committee-volunteer/",
     linkLabel: "Volunteer with Plum Creek",
   },
   {
-    number: "08",
     title: "Homes Within the HOA",
     description:
-      "Search the 119 Gardner property addresses currently located within Plum Creek HOA boundaries.",
+      "Search the 119 property addresses within Plum Creek HOA boundaries.",
     href: "/homes/",
     linkLabel: "Search HOA property addresses",
   },
@@ -74,26 +66,14 @@ const destinations = [
 export default function Home() {
   return (
     <main>
-      <section className="hero hero-social" id="top">
-        <img
-          className="hero-image"
-          src="/og.png"
-          alt="Plum Creek Homeowners Association entrance"
-        />
-        <div className="hero-quickbar home-hero-quickbar">
-          <p>
-            Official neighborhood information, member resources, and ways to
-            connect with the Plum Creek HOA.
-          </p>
-          <div className="hero-actions">
-            <Link className="primary-button" href="/architectural-request/">
-              Request architectural approval
-            </Link>
-            <Link className="outline-button" href="/contact/">
-              Contact the HOA
-            </Link>
-          </div>
+      <section className="home-banner" id="top">
+        <div className="home-banner-copy">
+          <p className="section-kicker">Our neighborhood · Gardner, Kansas</p>
+          <h1>Plum Creek HOA</h1>
+          <p>Neighborhood information, HOA resources, and your homeowner account.</p>
+          <div className="hero-actions"><Link className="primary-button" href="/portal/">Homeowner login <span aria-hidden="true">→</span></Link><Link className="outline-button" href="/architectural-request/">Architectural approval</Link></div>
         </div>
+        <div className="home-banner-photo"><img className="home-banner-image" src="/plum-creek-entrance.jpg" alt="The Plum Creek neighborhood entrance" fetchPriority="high" width={960} height={720} /></div>
       </section>
 
       <section className="home-destinations">
@@ -102,10 +82,6 @@ export default function Home() {
             <p className="section-kicker">Find what you need</p>
             <h2>Explore Plum Creek</h2>
           </div>
-          <p>
-            Visit a section below for neighborhood information, HOA resources,
-            and opportunities to participate.
-          </p>
         </div>
 
         <div className="destination-grid">
@@ -115,7 +91,6 @@ export default function Home() {
               href={destination.href}
               key={destination.href}
             >
-              <span className="destination-number">{destination.number}</span>
               <h3>{destination.title}</h3>
               <p>{destination.description}</p>
               <strong>
