@@ -9,7 +9,9 @@ import { WorkspaceSection } from "./WorkspaceSection";
 import { EmailChange } from "./EmailChange";
 import { PropertyHouseholds } from "./PropertyHouseholds";
 import { OccupancyChoice, type HomeOccupancy } from "./OccupancyChoice";
-import { NOTICE_CONSENT, type MemberDetails, type MemberProfile } from "../../lib/member-profile";
+import { type MemberDetails, type MemberProfile } from "../../lib/member-profile";
+
+import { MemberContactFields, contactFields } from "./MemberContactFields";
 
 type Property = { id: string; lot_number: number; street_address: string; occupancy_status?: string; relationship?: string; is_rental?: boolean };
 type Request = { id: string; lot_number: number; street_address: string; status: string; relationship: string; review_note: string };
@@ -39,7 +41,7 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
   },[client,userId,email,revision]);
   async function saveDetails(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
-    const fields=Object.fromEntries(["first_name","last_name","notification_email","phone","mailing_street","mailing_unit","mailing_city","mailing_state","mailing_postal_code","mailing_country"].map(name=>[name,String(data.get(name)??"").trim()]));
+    const fields=contactFields(data);
     const result=await client.rpc("save_member_profile",{p_details:fields,p_notice_consent:data.has("notice_consent")});
     setBusy(false);setMessage(result.error?result.error.message:"Current contact information saved. Property ownership still requires separate approval.");
     if(!result.error)setRevision((v)=>v+1);
@@ -63,20 +65,7 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
     {message&&<p className="portal-notice" role="status">{message}</p>}
     <WorkspaceSection title="Your current contact information" description="Keep your name, phone, and mailing address current" defaultOpen><p>Use your individual information. Historical household records are not used to verify your account.</p>
       {!loaded?<p>Loading member information…</p>:<form key={JSON.stringify([details,profile?.notice_consent])} onSubmit={saveDetails} className="portal-form">
-        {details?.display_name&&!details.first_name&&<p>Previously saved name: {details.display_name}. Please enter your first and last names below.</p>}
-        <div className="portal-form-row"><label>First name<input name="first_name" autoComplete="given-name" maxLength={80} defaultValue={details?.first_name??""} required/></label><label>Last name<input name="last_name" autoComplete="family-name" maxLength={80} defaultValue={details?.last_name??""} required/></label></div>
-        <label>Login email (username)<input value={profile?.email||email} readOnly type="email" autoComplete="username"/></label>
-        <p>To change your username, use the Login email section below and confirm the change through both inboxes.</p>
-        <label>Email for HOA notifications<input name="notification_email" type="email" autoComplete="email" maxLength={254} defaultValue={details?.notification_email||profile?.email||email} required/></label>
-        <p>This can differ from your login email. Updating it does not change your username.</p>
-        <label>Phone<input name="phone" type="tel" autoComplete="tel" maxLength={50} defaultValue={details?.phone??""}/></label>
-        {details?.mailing_address&&!details.mailing_street&&<p>Previously saved address: {details.mailing_address}. Enter its separate fields below.</p>}
-        <label>Mailing street address<input name="mailing_street" autoComplete="address-line1" maxLength={180} defaultValue={details?.mailing_street??""}/></label>
-        <label>Apartment / unit (optional)<input name="mailing_unit" autoComplete="address-line2" maxLength={60} defaultValue={details?.mailing_unit??""}/></label>
-        <div className="portal-form-row"><label>City<input name="mailing_city" autoComplete="address-level2" maxLength={100} defaultValue={details?.mailing_city??""}/></label><label>State / province<input name="mailing_state" autoComplete="address-level1" maxLength={80} defaultValue={details?.mailing_state??""}/></label><label>ZIP / postal code<input name="mailing_postal_code" autoComplete="postal-code" maxLength={20} defaultValue={details?.mailing_postal_code??""}/></label></div>
-        <label>Country<input name="mailing_country" autoComplete="country-name" maxLength={80} defaultValue={details?.mailing_country??"US"}/></label>
-        <label className="portal-checkbox notice-consent"><input type="checkbox" name="notice_consent" defaultChecked={profile?.notice_consent??false}/>{NOTICE_CONSENT}</label>
-        <p>Optional. Uncheck and save to withdraw email-notice consent. The email for HOA notifications above is your requested notice address.</p>
+        <MemberContactFields details={details} profile={profile} email={email}/>
         <button disabled={busy}>Save contact information</button>
       </form>}
     </WorkspaceSection>

@@ -17,5 +17,6 @@ export function MemberAccessGate({ client, children }: { client: SupabaseClient;
   if (failed) return <div className="portal-panel"><p role="status">Member access could not be checked. Refresh to try again.</p></div>;
   if (!access) return <p role="status">Checking member access…</p>;
   if (access.allowed) return children;
+  if (!access.rental_requirements.length) return <div className="portal-panel"><h2>Membership approval required</h2><p>Submit your membership application and wait for ownership approval before opening member information.</p><Link href="/members/">View membership application →</Link></div>;
   return <div className="portal-panel"><h2>Current rental paperwork required</h2><p>Add a rental agreement PDF and both lease dates for each rental home before opening member information. Your contact and rental forms remain available.</p><ul>{access.rental_requirements.map(p => <li key={p.request_id}>Lot {p.lot_number} — {p.street_address}</li>)}</ul><Link href="/members/">Update rental agreements &amp; lease dates →</Link></div>;
 }

@@ -10,10 +10,10 @@ Implemented October 11, 2026 against the existing `plum-creek-hoa` Supabase proj
 | `/officers/` | Current public President, Vice President, Secretary and Treasurer appointments. |
 | `/portal/` | Signup, email confirmation return, login, password recovery, MFA and member navigation. |
 | `/portal/reset-password/` | Dedicated new-password form after recovery, with matching-password confirmation and a fresh-link request for expired or invalid callbacks. |
-| `/members/` | Own current contact details, property requests, approved properties, rental PDF uploads and current tenant lease dates. |
-| `/admin/` | Directors/Officers with MFA review ownership, search all 119 properties and update occupancy. System administrators with MFA additionally manage leadership people, annual appointments and account links. |
-| `/leadership/` | Current Directors/Officers with MFA maintain service contacts, attach contracts, and publish or draft minutes and announcements. |
-| `/member-documents/` | Confirmed signed-in accounts download bylaws, search Board/Officer history, and read published minutes/announcements and their PDFs. |
+| `/members/` | One first-time membership application, then a pending page; approved accounts regain contact/property, household and rental update forms. See [membership and access](member-onboarding-and-access.md). |
+| `/admin/` | Accounts with HOA administration access and MFA review ownership and property/rental records. System administrators additionally grant/revoke workspace access and manage formal appointments/account links. |
+| `/leadership/` | Accounts with Officer & Director tools access and MFA maintain service contacts, contracts, minutes, announcements and the calendar. |
+| `/member-documents/` | Approved signed-in members (or authorized staff with MFA) download bylaws, search history and read published updates, subject to rental requirements. |
 
 Private pages export a sign-in shell with `noindex`. Private information loads only through authenticated database operations. UI visibility is not authorization. Browser code uses a modern publishable key; it contains no service-role key.
 
@@ -26,6 +26,7 @@ Private pages export a sign-in shell with `noindex`. Private information loads o
 | `public.officer_positions` | President, Vice President, Secretary, Treasurer reference titles. |
 | `public.officer_member_years` | Person + Officer position + service year. Historical changes within a year are preserved. |
 | `private.leadership_account_links` | Explicit, revocable person-to-confirmed-current-account link. Never matched to a historical email automatically. |
+| `private.portal_workspace_access` | Administrator-managed private workspace overrides, separate from public appointments and property ownership. |
 | `private.portal_bootstrap_admin` | One designated first administrator email/person; activation waits for confirmation. The email is configured privately in Supabase and is not committed. |
 | `private.signup_passcode` | Registration code and version. An administrator with MFA can choose 8–64 letters/numbers/hyphens or generate a random 24-character code. Only authorized leadership with MFA can retrieve it. See [signup passcode](signup-passcode.md). |
 | `private.signup_tickets` | Hashed, email-bound, 10-minute signup tickets, consumed during account creation. |
@@ -51,11 +52,11 @@ flowchart LR
 
 Updated October 12, 2026: public roster APIs and anonymous table policies return only the latest published appointments (no historical Board rows). Historical names are no longer embedded in static HTML or serialized page data. The authenticated `get_member_leadership_history()` API requires a confirmed, non-anonymous account; MFA is not needed to read member resources. Direct table policies enforce the same historical privacy.
 
-The bylaws PDF moved from `public/documents/` into private `hoa-member-governance/plum-creek-bylaws.pdf` Storage. Its 3,786,266 bytes were uploaded and a downloaded copy was hash-checked against the original. A local backup remains in ignored `private-data/governance/`. Only confirmed accounts can read that exact object; there are no client upload, replacement or delete policies for this bucket. Its 5 MB PDF limit accommodates this existing document without raising the 1 MB publication or 2 MB contract limits. The old public PDF path is removed from the website export. Previously downloaded or archived copies cannot be recalled.
+The bylaws PDF moved from `public/documents/` into private `hoa-member-governance/plum-creek-bylaws.pdf` Storage. Its 3,786,266 bytes were uploaded and a downloaded copy was hash-checked against the original. A local backup remains in ignored `private-data/governance/`. Only approved members or authorized staff with MFA can read that exact object, subject to rental requirements; there are no client upload, replacement or delete policies for this bucket. Its 5 MB PDF limit accommodates this existing document without raising the 1 MB publication or 2 MB contract limits. The old public PDF path is removed from the website export. Previously downloaded or archived copies cannot be recalled.
 
 Private pages have a compact blue/gray portal shell, smaller headings and controls, signed-in account status, active navigation, native collapsible sections and Collapse all / Expand all. Closing a section retains unsaved fields. Appointment management defaults to the current year, supports searching and editing existing seats, and provides public roster preview links. Display-name and published appointment edits update live public pages without a site rebuild. System administrator + MFA authorization remains required for appointment changes. Property reviews default to pending requests with status filtering; property management and login linking are collapsed initially.
 
-Publishing a roster is independent of granting login privileges. Privileges require a separately linked confirmed account, enabled appointment and current service dates. People can be Director, Officer, both or neither. Appointment date checks use PostgreSQL `current_date` (database timezone); role endpoints are inclusive. Bootstrap approves only the designated person's current-year Director/Officer records, from confirmation day through December 31. A multi-year public seat label does not automatically extend next year's login privileges.
+Publishing a roster is independent of granting login privileges. A separately linked confirmed account with an enabled current appointment gets default workspace access. System administrators can grant or revoke each workspace explicitly without editing the public roster; they retain both workspaces themselves. People can be Director, Officer, both or neither. Appointment date checks use PostgreSQL `current_date` (database timezone); role endpoints are inclusive. Bootstrap enables only the designated person's current-year Director/Officer records, from confirmation day through December 31. A multi-year public seat label does not automatically extend next year's appointment privileges.
 
 Directors/Officers with MFA can view the code, review property requests and manage occupancy. System administrator is a separate existing `user_roles` assignment enabling appointment management and code rotation after MFA. Editable metadata never grants privileges. Disabled/expired appointments and revoked links are checked from live records on every protected operation.
 
@@ -66,7 +67,7 @@ The 2026 roster shows Michael Bruna as Director and President, preserving the ex
 1. Open `/portal/`, select **Create account**, use the designated current email and choose a password of at least 12 characters. Leave the passcode blank for this designated initial signup only.
 2. Confirm the email, then sign in. Confirmation activates the privately configured administrator link and current-year Director/President assignments.
 3. Set up or verify an authenticator through the MFA panel. Then view the signup passcode and open **Leadership administration**.
-4. Other homeowners register with the passcode, confirm an individual current email, enter contact details on `/members/`, and request property verification.
+4. Other homeowners register with the passcode, confirm an individual current email and submit the combined membership application on `/members/`. They see a pending page until ownership review is approved.
 5. Other leaders register normally. The administrator explicitly links their confirmed account to a leadership person and approves dated appointments.
 
 The code permits registration only: no automatic ownership or voting eligibility. Direct Auth signup is also guarded by `hoa_enforce_signup_gate` on `auth.users`; bypassing the form cannot bypass that check. The optional `public.hoa_before_user_created` Auth hook shares the validation, but configuring it is not required for the installed trigger guard. Only `supabase_auth_admin` can call that hook interface.
@@ -75,7 +76,7 @@ Tickets are bound to email and code version. Rotation invalidates unused tickets
 
 ## Property review
 
-Separate accounts can be approved for one property, and one account can have multiple properties. Duplicate active requests for one account/property fail. Staff must independently check current ownership and record an evidence source or rejection/revocation reason; they cannot review their own request. Row locks protect decisions and serialize concurrent approvals across properties for one account.
+Separate accounts can be approved for one property, and one account can have multiple properties. Duplicate active requests for one account/property fail. Staff record a current ownership evidence source or rejection/revocation reason. Only system administrators with MFA may review their own request; such decisions are explicitly audited. Other reviewers cannot self-review. Row locks protect decisions and serialize concurrent approvals across properties for one account.
 
 Approval creates a fresh current contact if needed and an explicitly verified property association. It never searches for/promotes a historical email or household match. All 119 original contacts and 136 historical emails remain unverified. Member access checks approval, account/contact association, relationship, verification and effective dates. Portal property-contact ending dates are exclusive, so revoking today removes access immediately, even after same-day approval.
 

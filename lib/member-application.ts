@@ -1,0 +1,2 @@
+export type ApplicationRequest = { id: string; property_id: string; lot_number: number; street_address: string; status: string; relationship: string; occupancy_choice: "owner_occupied" | "rental" | null; request_note: string; review_note: string; submitted_at: string };
+export type MemberApplicationStatus = { phase: "setup" | "pending" | "approved" | "needs_changes"; requests: ApplicationRequest[] };

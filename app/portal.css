@@ -94,3 +94,12 @@
 .occupancy-choice { margin: 0; border: 1px solid #d6e0e8; border-radius: .35rem; padding: .7rem; min-width: 0; }
 .occupancy-choice legend { font-weight: 650; padding: 0 .3rem; }
 .occupancy-choice .rental-toggle { margin: .45rem 0; font-weight: 500; }
+.portal-app .membership-application { max-width: 900px; }
+.application-step { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 12px; margin: 6px 0; }
+.application-step legend { font-size: 16px; font-weight: 700; padding: 0 6px; }
+.application-badge { display: inline-block; background: #e8f1f8; color: #245c88; padding: 5px 9px; border-radius: 4px; font-weight: 700; font-size: 12px; margin-bottom: 10px; }
+.portal-app .application-status { border-top: 4px solid #c58a2e; max-width: 850px; padding: 24px; }
+.application-status a { color: #245c88; text-decoration: underline; }
+.portal-app .workspace-access-form { display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; max-width:none; }
+.portal-app .workspace-access-form label { min-height:32px; align-items:center; }
+@media (max-width:600px) { .application-step { padding:12px; } .portal-app .application-status { padding:18px; } }

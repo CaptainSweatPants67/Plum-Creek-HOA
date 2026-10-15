@@ -71,7 +71,7 @@ export function LeadershipManager({ client }: { client: SupabaseClient }) {
   async function linkAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true);
     const { error } = await client.rpc("link_leadership_account", { p_person_id: data.get("person_id"), p_email: data.get("email") });
-    setBusy(false); setMessage(error ? error.message : "Confirmed account linked. Approved service dates control Director and Officer privileges.");
+    setBusy(false); setMessage(error ? error.message : "Confirmed account linked. Service dates supply default workspace access; Member accounts & workspace access can override it.");
   }
   function edit(kind: "board" | "officer", row: Service) { setDraftPersonId(""); setEditing({ kind, row }); setMessage(""); openEditor(); }
   const rows = [...board.map(row => ({ row, kind: "board" as const })), ...officers.map(row => ({ row, kind: "officer" as const }))];
@@ -96,8 +96,8 @@ export function LeadershipManager({ client }: { client: SupabaseClient }) {
         <label>Director seat / term label<input name="seat_label" defaultValue={editing?.row.seat_label ?? "Director"} maxLength={100} /></label>
         <label>Service begins<input name="starts_on" type="date" defaultValue={editing?.row.starts_on ?? ""} /></label><label>Service ends<input name="ends_on" type="date" defaultValue={editing?.row.ends_on ?? ""} /></label>
         <label className="portal-checkbox form-wide"><input type="checkbox" name="published" defaultChecked={editing?.row.published ?? true} />Publish appointment (latest service year on public roster; past service in member history)</label>
-        <label className="portal-checkbox form-wide"><input type="checkbox" name="privileges_enabled" defaultChecked={editing?.row.privileges_enabled ?? false} />Approve login privileges for these service dates</label>
-        <p className="form-wide">Login privileges also require a linked, confirmed account. Service dates must fall within the selected year.</p>
+        <label className="portal-checkbox form-wide"><input type="checkbox" name="privileges_enabled" defaultChecked={editing?.row.privileges_enabled ?? false} />Enable appointment-based workspace access for these service dates</label>
+        <p className="form-wide">Requires a linked, confirmed account and service dates within the selected year. Explicit grants or revocations under Member accounts &amp; workspace access override this default.</p>
         <div className="portal-actions form-wide"><button disabled={busy}>Save appointment</button><button type="button" disabled={busy} onClick={() => { setEditing(null); setDraftPersonId(""); }}>Clear editor</button></div>
       </form></div>
     </WorkspaceSection>

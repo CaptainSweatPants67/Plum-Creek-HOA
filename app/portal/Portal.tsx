@@ -17,10 +17,13 @@ import { RentalWorkspace } from "./RentalWorkspace";
 import { MemberAccessGate } from "./MemberAccessGate";
 import { CalendarManager } from "./CalendarManager";
 import { PropertyHouseholds } from "./PropertyHouseholds";
+import { MemberApplication } from "./MemberApplication";
+import { AccountAccessManager } from "./AccountAccessManager";
+import type { MemberApplicationStatus } from "../../lib/member-application";
 
-type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean };
+type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean; can_access_admin?: boolean; can_access_tools?: boolean; can_review_members?: boolean };
 
-export function Portal({ view = "portal" }: { view?: "portal" | "members" | "admin" | "leadership" | "documents" }) {
+export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "members" | "admin" | "leadership" | "documents" }) {
   const [client, setClient] = useState<SupabaseClient | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -31,6 +34,12 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
   const [rentalRevision, setRentalRevision] = useState(0);
   const [factorId, setFactorId] = useState("");
   const [qr, setQr] = useState("");
+  const [applicationData,setApplication]=useState<MemberApplicationStatus|null>(null);
+  const [applicationOwner,setApplicationOwner]=useState("");
+  const [applicationError,setApplicationError]=useState("");
+  const application=applicationOwner===session?.user.id?applicationData:null;
+  const view=requestedView==="portal"&&session?"members":requestedView;
+  const refreshMembership=()=>window.dispatchEvent(new Event("hoa-membership-changed"));
 
   useEffect(() => {
     // Forward older email callbacks before Supabase consumes their URL fragment.
@@ -59,20 +68,34 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     const { data } = client.auth.onAuthStateChange((event, next) => {
       setSession(next);
       if (event === "PASSWORD_RECOVERY") window.location.assign("/portal/reset-password/");
-      if (!next) { setFlags(null); setQr(""); setFactorId(""); }
+      if (!next) { setFlags(null); setQr(""); setFactorId(""); setApplication(null); setApplicationOwner(""); }
     });
     return () => { active = false; data.subscription.unsubscribe(); window.removeEventListener("hashchange", forwardRecovery); };
   }, []);
   useEffect(() => {
     if (!client || !session) return;
     let active = true;
-    void client.rpc("get_portal_flags").then(({ data, error }) => {
+    const load=()=>{void client.rpc("get_portal_flags").then(({ data, error }) => {
       if (!active) return;
       if (error) { setFlags(null); setMessage("Portal permissions could not be loaded. Please try again."); }
       else { setFlags(data as Flags); }
-    });
-    return () => { active = false; };
+    });};
+    load();window.addEventListener("focus",load);window.addEventListener("hoa-membership-changed",load);
+    return () => { active = false;window.removeEventListener("focus",load);window.removeEventListener("hoa-membership-changed",load); };
   }, [client, session]);
+
+  useEffect(()=>{
+    if(!client||!session)return;
+    let active=true;
+    const load=()=>{void client.rpc("get_member_application_status").then(({data,error})=>{
+      if(!active)return;
+      if(error){setApplicationError(error.message);return;}
+      if(!data||!["setup","pending","approved","needs_changes"].includes(data.phase)){setApplicationError("Application status could not be loaded.");return;}
+      setApplication(current=>JSON.stringify(current)===JSON.stringify(data)?current:data as MemberApplicationStatus);setApplicationOwner(session.user.id);setApplicationError("");
+    });};
+    load();const interval=window.setInterval(load,30000);window.addEventListener("focus",load);window.addEventListener("hoa-membership-changed",load);
+    return()=>{active=false;window.clearInterval(interval);window.removeEventListener("focus",load);window.removeEventListener("hoa-membership-changed",load);};
+  },[client,session]);
 
   async function submitAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -144,7 +167,11 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
 
   if (!authReady) return <section className="portal-section"><p role="status">Loading your account…</p></section>;
   if (!client) return <section className="portal-section"><p>Portal setup is in progress. Please contact the HOA for access.</p></section>;
-  const leadership = flags && (flags.is_admin || flags.is_director || flags.is_officer);
+  const administration=flags?.can_access_admin??Boolean(flags&&(flags.is_admin||flags.is_director||flags.is_officer));
+  const tools=flags?.can_access_tools??Boolean(flags&&(flags.is_admin||flags.is_director||flags.is_officer));
+  const leadership=administration||tools;
+  const memberMenu=application?.phase==="approved"||leadership;
+  const showApplication=application&&application.phase!=="approved"&&(view==="members"||!leadership);
   return <section className="portal-section">
     {message && <p className="portal-notice" role="status">{message}</p>}
     {!session ? <div className="portal-panel">
@@ -161,25 +188,29 @@ export function Portal({ view = "portal" }: { view?: "portal" | "members" | "adm
     </div> : <>
       <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setMessage(""); }}>Sign out</button></div>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
-        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">My information &amp; properties</Link><Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>{leadership && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{(flags?.is_director || flags?.is_officer) && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
+        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">{application?.phase==="approved"?"My information & properties":"My membership application"}</Link>{memberMenu&&<Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>}{administration && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{tools && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
       </div>
-      <SectionControls />
-      {leadership && !flags.has_mfa && <div className="portal-panel"><h2>Verify your leadership login</h2><p>MFA is required to view the homeowner signup passcode or manage appointments.</p>
+      {!showApplication&&(application||leadership)&&<SectionControls />}
+      {!application&&!leadership&&(applicationError?<div className="portal-panel"><p role="status">{applicationError}</p><button onClick={refreshMembership}>Retry application status</button></div>:<p role="status">Checking application status…</p>)}
+      {application&&applicationError&&<p className="portal-notice" role="status">Approval status could not be refreshed: {applicationError}</p>}
+      {leadership && !flags?.has_mfa && <div className="portal-panel"><h2>Verify your leadership login</h2><p>Verify your authenticator to open your authorized HOA workspaces.</p>
         {!factorId && <button onClick={beginMfa} disabled={busy}>Set up or verify authenticator</button>}
         {qr && <><p>Scan this QR code with your authenticator app.</p><Image src={qr} alt="Your authenticator enrollment QR code" width={220} height={220} unoptimized /></>}
         {factorId && <form className="portal-form" onSubmit={verifyMfa}><label>Authenticator code<input name="mfa_code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label><button disabled={busy}>Verify MFA</button></form>}
       </div>}
+      {showApplication&&<MemberApplication key={`application-${session.user.id}`} client={client} email={session.user.email??""} status={application} onChanged={refreshMembership} isAdmin={Boolean(flags?.is_admin)}/>}
+      {view === "members" && application?.phase==="approved" && <MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
+      {view === "documents" && memberMenu && <MemberAccessGate key={`access-${session.user.id}`} client={client}><MemberResources key={`resources-${session.user.id}`} client={client} /><MemberLibrary key={`library-${session.user.id}`} client={client} /></MemberAccessGate>}
+      {view === "leadership" && flags?.has_mfa && tools && <LeadershipRecords key={`records-${session.user.id}`} client={client} />}
+      {view === "leadership" && flags && !tools && memberMenu && <div className="portal-panel"><h2>Workspace access required</h2><p>A system administrator can grant Officer &amp; Director tools access to your registered account.</p></div>}
+      {view === "admin" && flags?.has_mfa && administration && <StaffWorkspace key={`staff-${session.user.id}`} client={client} userId={session.user.id} isAdmin={flags.is_admin} onChanged={() => {setRentalRevision(v => v + 1);refreshMembership();}} />}
+      {view === "admin" && flags?.can_manage_leadership && <AccountAccessManager client={client} onChanged={refreshMembership}/>}
       {flags?.can_view_signup_code && view === "admin" && <SignupPasscode key={`signup-code-${session.user.id}`} client={client} canReplace={flags.can_manage_leadership} />}
-      {view === "members" && <MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
-      {view === "documents" && <MemberAccessGate key={`access-${session.user.id}`} client={client}><MemberResources key={`resources-${session.user.id}`} client={client} /><MemberLibrary key={`library-${session.user.id}`} client={client} /></MemberAccessGate>}
-      {view === "leadership" && flags?.has_mfa && (flags.is_director || flags.is_officer) && <LeadershipRecords key={`records-${session.user.id}`} client={client} />}
-      {view === "leadership" && flags && !flags.is_director && !flags.is_officer && <div className="portal-panel"><h2>Director or Officer access required</h2><p>This workspace is for currently appointed Directors and Officers. Members can read published minutes and announcements.</p><Link href="/member-documents/">Read member updates →</Link></div>}
+      {view === "admin" && flags?.has_mfa && administration && <RentalWorkspace key={`rental-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
+      {view === "admin" && flags?.has_mfa && administration && <PropertyHouseholds key={`households-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
+      {view === "admin" && flags?.has_mfa && administration && <CalendarManager key={`calendar-staff-${session.user.id}`} client={client} defaultOpen={false} />}
       {view === "admin" && flags?.can_manage_leadership && <LeadershipManager key={`leadership-${session.user.id}`} client={client} />}
-      {view === "admin" && flags?.can_view_signup_code && <StaffWorkspace key={`staff-${session.user.id}`} client={client} userId={session.user.id} onChanged={() => setRentalRevision(v => v + 1)} />}
-      {view === "admin" && flags?.can_view_signup_code && <RentalWorkspace key={`rental-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
-      {view === "admin" && flags?.can_view_signup_code && <PropertyHouseholds key={`households-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
-      {view === "admin" && flags?.can_view_signup_code && <CalendarManager key={`calendar-staff-${session.user.id}`} client={client} defaultOpen={false} />}
-      {view === "admin" && flags && !leadership && <div className="portal-panel"><h2>Leadership access required</h2><p>This page is available to assigned Directors, Officers, and system administrators. You can manage your own information on the member page.</p></div>}
+      {view === "admin" && flags && !administration && memberMenu && <div className="portal-panel"><h2>Workspace access required</h2><p>A system administrator can grant HOA administration access to your registered account.</p></div>}
     </>}
   </section>;
 }

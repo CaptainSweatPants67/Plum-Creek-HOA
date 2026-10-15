@@ -56,7 +56,7 @@ export function LeadershipRecords({ client }: { client: SupabaseClient }) {
     ]).then(([contacts, posts, files, usage]) => {
       if (!active) return;
       const error = contacts.error || posts.error || files.error || usage.error;
-      if (error) { setLoadError("The workspace could not be loaded. A current Director or Officer appointment and MFA are required."); setLoaded(false); }
+      if (error) { setLoadError("The workspace could not be loaded. Officer & Director tools access and MFA are required."); setLoaded(false); }
       else { setContacts(contacts.data as ServiceContact[]); setPosts(posts.data as Publication[]); setFiles(files.data as LibraryFile[]); setUsage(usage.data as LibraryUsage); setLoaded(true); setLoadError(""); }
     });
     return () => { active = false; };

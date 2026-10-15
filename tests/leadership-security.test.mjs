@@ -54,6 +54,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration('explicit_occupancy_and_notification_email'));
   await db.exec(await migration('typed_signup_passcode'));
   await db.exec(await migration('passcode_ticket_cleanup_safeupdate'));
+  await db.exec(await migration('member_onboarding_and_workspace_access'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -81,7 +82,13 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     });
     assert.equal(await scalar("select count(*) from public.board_member_years where privileges_enabled"),0);
   });
-  await t.test("confirmed members can read historical leadership and bylaws; anonymous and unconfirmed accounts cannot",async()=>{
+  await t.test("approved members can read historical leadership and bylaws; pending, anonymous and unconfirmed accounts cannot",async()=>{
+    await asRole('authenticated',homeowner,'aal1',()=>assert.rejects(db.query('select public.get_member_leadership_history()'),/required/));
+    await db.exec(`insert into public.properties(id,lot_number,street_address) values('00000000-0000-4000-8000-000000000090',90,'Approved fixture home');
+      insert into public.contacts(id,display_name,contact_verified_at) values('00000000-0000-4000-8000-000000000091','Approved fixture',now());
+      insert into public.user_profiles(user_id,contact_id) values('${homeowner}','00000000-0000-4000-8000-000000000091');
+      insert into public.property_contacts(id,property_id,contact_id,relationship,started_on,ownership_verified_at) values('00000000-0000-4000-8000-000000000092','00000000-0000-4000-8000-000000000090','00000000-0000-4000-8000-000000000091','owner',current_date,now());
+      insert into private.property_access_requests(user_id,property_id,status,requested_relationship,property_contact_id) values('${homeowner}','00000000-0000-4000-8000-000000000090','approved','owner','00000000-0000-4000-8000-000000000092');`);
     await db.exec("insert into storage.objects(bucket_id,name,metadata) values('hoa-member-governance','plum-creek-bylaws.pdf','{\"size\":3600000,\"mimetype\":\"application/pdf\"}')");
     await asRole('authenticated',homeowner,'aal1',async()=>{
       const history=await scalar('select public.get_member_leadership_history()');
@@ -100,7 +107,12 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
       assert.equal(await scalar("select count(*) from public.board_member_years where record_kind='historical'"),0);
     });
     await db.query('update auth.users set email_confirmed_at=now() where id=$1',[homeowner]);
-    await db.exec("delete from storage.objects where bucket_id='hoa-member-governance'");
+    await db.exec(`delete from storage.objects where bucket_id='hoa-member-governance';
+      delete from private.property_access_requests where property_id='00000000-0000-4000-8000-000000000090';
+      delete from public.property_contacts where id='00000000-0000-4000-8000-000000000092';
+      delete from public.user_profiles where user_id='${homeowner}';
+      delete from public.contacts where id='00000000-0000-4000-8000-000000000091';
+      delete from public.properties where id='00000000-0000-4000-8000-000000000090';`);
   });
   await t.test("user metadata cannot grant admin or homeowner contact access", async () => {
     await asRole("authenticated",homeowner,"aal2",async () => {
@@ -283,17 +295,23 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     assert.equal(await scalar("select count(distinct contact_id) from public.property_contacts where ownership_verified_at is not null"),1);
     assert.equal(await scalar("select c.display_name from public.user_profiles u join public.contacts c on c.id=u.contact_id where u.user_id=$1",[homeowner]),"Current homeowner");
   });
-  await t.test("staff cannot self approve; ending an approved request removes property access on the same day",async()=>{
+  await t.test("administrator self-review is explicit and audited; ending approved access takes effect the same day",async()=>{
+    await db.exec('begin');
     await asRole("authenticated",admin,"aal2",async()=>{
       await db.query("insert into public.portal_account_details(user_id,display_name) values($1,'Administrator')",[admin]);
       administratorRequest=await scalar("select public.submit_property_access_request($1,'co_owner','Own request')",[propertyA]);
-      await assert.rejects(db.query("select public.review_property_access_request($1,'approved','Self approval')",[administratorRequest]),/cannot review your own/);
+      await db.exec('savepoint administrator_self_review');
+      await db.query("select public.review_property_access_request($1,'approved','Synthetic current deed checked for administrator self-review')",[administratorRequest]);
+      assert.equal((await member()).properties.some(p=>p.id===propertyA),true);
+      await db.exec('rollback to savepoint administrator_self_review');
+      await db.exec('release savepoint administrator_self_review');
       await db.query("select public.review_property_access_request($1,'revoked','Synthetic ownership ended')",[requestA]);
     });
     await asRole("authenticated",homeowner,"aal2",async()=>{
       const view=await member();assert.equal(view.properties.length,1);assert.equal(view.properties[0].id,propertyB);
       assert.equal(view.requests.find((r)=>r.id===requestA).status,"revoked");
     });
+    await db.exec('commit');
   });
   await t.test("occupancy changes and audit/history commit together; repeats do not fabricate history",async()=>{
     await asRole("authenticated",homeowner,"aal2",async()=>{
@@ -733,6 +751,114 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     });
     assert.equal(await scalar('select occupancy_status from public.properties where id=$1',[p]),'rental');
     await asRole('authenticated',staff,'aal2',async()=>assert.equal((await scalar('select public.get_staff_workspace()')).requests.find(r=>r.id===chosenRequest).occupancy_choice,'owner_occupied'));
+  });
+
+  const applicant='00000000-0000-4000-8000-000000000101';
+  const applicantHome='00000000-0000-4000-8000-000000000102';
+  const applicationDetails={first_name:'New',last_name:'Applicant',notification_email:'notices-applicant@example.test',phone:'555-0123',mailing_street:'102 Fixture Street',mailing_city:'Gardner',mailing_state:'KS',mailing_postal_code:'66030',mailing_country:'US'};
+  const application=()=>scalar('select public.get_member_application_status()');
+  const submitApplication=(details=applicationDetails,household={})=>scalar("select public.submit_member_application($1,$2,'owner','Current purchase','owner_occupied',true,$3)",[JSON.stringify(details),applicantHome,JSON.stringify(household)]);
+  await t.test('one membership submission saves profile/property/household atomically, shows pending, rejects duplicate submissions and restores updates after approval',async()=>{
+    const nonce=await ticket('new-applicant@example.test');await newUser(applicant,'new-applicant@example.test',nonce.ticket);
+    await asRole('authenticated',applicant,'aal1',()=>assert.rejects(db.query('select public.get_member_application_status()'),/Confirmed account/));
+    await db.query('update auth.users set email_confirmed_at=now() where id=$1',[applicant]);
+    await db.query("insert into public.properties(id,lot_number,street_address) values($1,102,'102 Fixture Street')",[applicantHome]);
+    await asRole('anon',null,null,()=>assert.rejects(db.query('select public.get_member_application_status()'),/permission denied/));
+    await asRole('authenticated',applicant,'aal1',async()=>{
+      assert.equal((await application()).phase,'setup');assert.equal((await scalar('select public.get_member_access()')).allowed,false);
+      await assert.rejects(submitApplication({...applicationDetails,mailing_street:''}),/mailing street/);
+      await assert.rejects(submitApplication(applicationDetails,{is_trust:true}),/trust name/);
+    });
+    assert.equal(await scalar('select count(*) from public.portal_account_details where user_id=$1',[applicant]),0);
+    assert.equal(await scalar('select count(*) from private.property_access_requests where user_id=$1',[applicant]),0);
+    const household={is_trust:true,trust_name:'Fixture Trust',decision_first_name:'New',decision_last_name:'Applicant',additional_members:[{first_name:'Joint',last_name:'Owner',relationship:'co_owner',email:'joint@example.test',phone:''}]};
+    let request;
+    await asRole('authenticated',applicant,'aal1',async()=>{
+      request=await submitApplication(applicationDetails,household);
+      const status=await application();assert.equal(status.phase,'pending');assert.equal(status.requests[0].property_id,applicantHome);assert.equal(status.requests[0].occupancy_choice,'owner_occupied');
+      assert.equal((await scalar('select public.get_member_profile()')).details.notification_email,applicationDetails.notification_email);
+      assert.equal((await scalar('select public.get_property_households()')).properties[0].household.trust_name,'Fixture Trust');
+      await assert.rejects(submitApplication(),/already pending/);assert.equal((await scalar('select public.get_member_access()')).allowed,false);
+      assert.equal(await scalar('select count(*) from public.hoa_publications'),0);
+    });
+    await asRole('authenticated',admin,'aal2',async()=>{
+      const queue=await scalar('select public.get_staff_workspace()');assert.ok(queue.requests.some(r=>r.id===request&&r.user_id===applicant));
+      const accounts=await scalar('select public.get_account_access_workspace()');assert.equal(accounts.accounts.find(a=>a.user_id===applicant).application_status,'pending');
+      await db.query("select public.review_property_access_request($1,'rejected','Provide current ownership evidence')",[request]);
+    });
+    await asRole('authenticated',applicant,'aal1',async()=>{assert.equal((await application()).phase,'needs_changes');request=await submitApplication(applicationDetails,household);assert.equal((await application()).phase,'pending');});
+    await asRole('authenticated',admin,'aal2',()=>db.query("select public.review_property_access_request($1,'approved','Synthetic current ownership evidence checked')",[request]));
+    await asRole('authenticated',applicant,'aal1',async()=>{
+      assert.equal((await application()).phase,'approved');assert.equal((await scalar('select public.get_member_access()')).allowed,true);
+      await assert.rejects(submitApplication(),/already approved/);
+      await db.query('select public.save_member_profile($1,true)',[JSON.stringify({...applicationDetails,phone:'555-9999'})]);
+      assert.equal((await scalar('select public.get_member_profile()')).details.phone,'555-9999');
+    });
+  });
+  await t.test('workspace checkboxes grant/revoke immediately, cannot create administrators, and can override appointed access without changing the public roster',async()=>{
+    const before=await scalar('select public.get_public_leadership_roster()');
+    for(const [role,uid,aal] of [['anon',null,null],['authenticated',applicant,'aal2'],['authenticated',staff,'aal2'],['authenticated',admin,'aal1']]){
+      await asRole(role,uid,aal,async()=>{
+        await assert.rejects(db.query('select public.get_account_access_workspace()'),/permission denied|System administrator/);
+        await assert.rejects(db.query('select public.set_account_workspace_access($1,true,true)',[applicant]),/permission denied|System administrator/);
+      });
+    }
+    await asRole('authenticated',admin,'aal2',async()=>{
+      await assert.rejects(db.query('select public.set_account_workspace_access($1,false,false)',[admin]),/retain both/);
+      await assert.rejects(db.query('select public.set_account_workspace_access($1,null,true)',[applicant]),/Choose both/);
+      await db.query('select public.set_account_workspace_access($1,true,true)',[applicant]);
+    });
+    await asRole('authenticated',applicant,'aal1',async()=>{const f=await flags();assert.equal(f.can_access_admin,true);assert.equal(f.can_access_tools,true);assert.equal(f.can_manage_leadership,false);await assert.rejects(db.query('select public.get_staff_workspace()'),/MFA required/);});
+    await asRole('authenticated',applicant,'aal2',async()=>{
+      const f=await flags();assert.equal(f.is_admin,false);assert.equal(f.is_director,false);assert.equal(f.is_officer,false);assert.equal(f.can_review_members,true);
+      assert.ok((await scalar('select public.get_staff_workspace()')).requests.length>0);await db.query('select public.get_hoa_library_usage()');
+      assert.equal((await scalar('select public.get_service_vault_status()')).eligible,false);
+      await assert.rejects(db.query('select public.set_account_workspace_access($1,true,true)',[staff]),/System administrator/);
+      await assert.rejects(db.query('select * from private.portal_workspace_access'),/permission denied/);
+      await assert.rejects(db.query("select public.review_property_access_request($1,'revoked','Attempt self review')",[(await application()).requests.find(r=>r.status==='approved').id]),/Only a system administrator/);
+    });
+    assert.deepEqual(await scalar('select public.get_public_leadership_roster()'),before);
+    await asRole('authenticated',admin,'aal2',async()=>{await db.query('select public.set_account_workspace_access($1,false,false)',[applicant]);await db.query('select public.set_account_workspace_access($1,false,false)',[staff]);});
+    for(const id of [applicant,staff])await asRole('authenticated',id,'aal2',async()=>{const f=await flags();assert.equal(f.can_access_admin,false);assert.equal(f.can_access_tools,false);await assert.rejects(db.query('select public.get_staff_workspace()'),/MFA required/);assert.equal(await scalar('select count(*) from public.hoa_service_contacts'),0);});
+    assert.equal(await scalar("select count(*) from public.user_roles where user_id=$1 and role='admin'",[applicant]),0);
+    assert.equal(await scalar("select count(*) from private.leadership_audit where action='workspace_access_changed'"),3);
+    await asRole('authenticated',admin,'aal2',()=>db.query('select public.set_account_workspace_access($1,false,true)',[applicant]));
+    await asRole('authenticated',applicant,'aal1',()=>assert.rejects(db.query("insert into public.hoa_events(kind,title,event_date) values('meeting','Tools-only draft fixture',current_date)"),/row-level security|MFA required/));
+    await asRole('authenticated',applicant,'aal2',async()=>{
+      await assert.rejects(db.query('select public.get_staff_workspace()'),/MFA required/);
+      const event=await scalar("insert into public.hoa_events(kind,title,event_date,published) values('meeting','Tools-only draft fixture',current_date,false) returning id");
+      assert.equal(await scalar('select published from public.hoa_events where id=$1',[event]),false);
+      await db.query("update public.hoa_events set title='Updated tools-only draft' where id=$1",[event]);
+    });
+    await asRole('authenticated',admin,'aal2',()=>db.query('select public.set_account_workspace_access($1,false,false)',[applicant]));
+    await db.query('delete from private.portal_workspace_access where user_id=$1',[staff]);
+  });
+  await t.test('system administrators may self approve only with MFA and an evidence note; self-review is recorded',async()=>{
+    const home='00000000-0000-4000-8000-000000000104';let request;
+    await db.query("insert into public.properties(id,lot_number,street_address) values($1,104,'Administrator fixture home')",[home]);
+    await asRole('authenticated',admin,'aal2',async()=>{request=await scalar("select public.request_property_verification_with_occupancy($1,'owner','Own home','owner_occupied')",[home]);await assert.rejects(db.query("select public.review_property_access_request($1,'approved','')",[request]),/Record how ownership/);});
+    await asRole('authenticated',admin,'aal1',()=>assert.rejects(db.query("select public.review_property_access_request($1,'approved','Fixture evidence')",[request]),/MFA required/));
+    await asRole('authenticated',admin,'aal2',()=>db.query("select public.review_property_access_request($1,'approved','Synthetic current deed checked for own property')",[request]));
+    assert.equal(await scalar("select status from private.property_access_requests where id=$1",[request]),'approved');
+    assert.equal(await scalar("select count(*) from private.leadership_audit where action='property_request_approved' and details->>'request_id'=$1 and details->>'administrator_self_review'='true'",[request]),1);
+  });
+  await t.test('rental applications stay incomplete until a finished current lease exists; expired leases keep update access but block member information',async()=>{
+    const uid='00000000-0000-4000-8000-000000000105',home='00000000-0000-4000-8000-000000000106';let request,file;
+    const nonce=await ticket('rental-applicant@example.test');await newUser(uid,'rental-applicant@example.test',nonce.ticket);await db.query('update auth.users set email_confirmed_at=now() where id=$1',[uid]);
+    await db.query("insert into public.properties(id,lot_number,street_address,occupancy_status) values($1,106,'Rental application fixture','rental')",[home]);
+    await asRole('authenticated',uid,'aal1',async()=>{
+      request=await scalar("select public.submit_member_application($1,$2,'owner','Fixture','owner_occupied',false,'{}')",[JSON.stringify(applicationDetails),home]);
+      assert.equal((await application()).phase,'setup');assert.equal((await scalar('select public.get_member_access()')).allowed,false);
+      const retried=await scalar("select public.submit_member_application($1,$2,'owner','Retry','owner_occupied',false,'{}')",[JSON.stringify(applicationDetails),home]);assert.equal(retried,request);
+      file=await scalar("select public.reserve_rental_agreement($1,'fixture.pdf',25,current_date-1,current_date+365)",[request]);
+    });
+    await asRole('authenticated',admin,'aal2',()=>assert.rejects(db.query("select public.review_property_access_request($1,'approved','Fixture evidence')",[request]),/current rental agreement/));
+    await db.query("insert into storage.objects(bucket_id,name,metadata) values('hoa-rental-agreements',$1,'{\"size\":25,\"mimetype\":\"application/pdf\"}')",[file.storage_path]);
+    await asRole('authenticated',uid,'aal1',async()=>{await db.query('select public.finish_rental_agreement($1)',[file.id]);assert.equal((await application()).phase,'pending');});
+    await asRole('authenticated',admin,'aal2',()=>db.query("select public.review_property_access_request($1,'approved','Synthetic rental ownership evidence checked')",[request]));
+    await asRole('authenticated',uid,'aal1',async()=>{assert.equal((await application()).phase,'approved');assert.equal((await scalar('select public.get_member_access()')).allowed,true);});
+    await db.query('update public.rental_agreements set lease_end=current_date-1 where document_id=$1',[file.id]);
+    await asRole('authenticated',uid,'aal1',async()=>{assert.equal((await application()).phase,'approved');assert.equal((await scalar('select public.get_member_access()')).allowed,false);await db.query('select public.get_member_profile()');await db.query('select public.get_rental_workspace()');});
   });
 
 });
