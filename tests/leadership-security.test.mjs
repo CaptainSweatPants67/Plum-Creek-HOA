@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
+import { managementTests } from "./management-fixtures.mjs";
 
 test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership", async (t) => {
   const db = new PGlite();
@@ -13,7 +14,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
   const migrationFiles = await readdir(new URL("../supabase/migrations/",import.meta.url));
   const migration = (name) => read(`supabase/migrations/${migrationFiles.find((file)=>file.endsWith(`_${name}.sql`))}`);
-  await db.exec(`create role anon; create role authenticated; create role supabase_auth_admin;
+  await db.exec(`create role anon; create role authenticated; create role service_role; create role supabase_auth_admin;
     create schema auth; create schema storage;
     create table auth.users(id uuid primary key, email text unique, email_confirmed_at timestamptz, is_anonymous boolean default false,
       email_change text default '',raw_app_meta_data jsonb default '{"provider":"email"}', raw_user_meta_data jsonb default '{}');
@@ -55,6 +56,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration('typed_signup_passcode'));
   await db.exec(await migration('passcode_ticket_cleanup_safeupdate'));
   await db.exec(await migration('member_onboarding_and_workspace_access'));
+  await db.exec(await migration('property_management_and_treasury'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -861,4 +863,5 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     await asRole('authenticated',uid,'aal1',async()=>{assert.equal((await application()).phase,'approved');assert.equal((await scalar('select public.get_member_access()')).allowed,false);await db.query('select public.get_member_profile()');await db.query('select public.get_rental_workspace()');});
   });
 
+  await managementTests({t,db,asRole,scalar,admin,homeowner,staff});
 });

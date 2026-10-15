@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect,useState,type FormEvent } from "react";
+import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WorkspaceSection } from "./WorkspaceSection";
 type Request={id:string;user_id:string;display_name:string;email:string;phone:string;mailing_address:string;lot_number:number;street_address:string;status:string;relationship:string;request_note:string;review_note:string;notification_email?:string;occupancy_choice?:string|null;email_notice_consent?:boolean;email_notice_consented_at?:string};
@@ -9,17 +10,13 @@ type Workspace={requests:Request[];properties:Property[]};
 
 export function StaffWorkspace({client,userId,isAdmin=false,onChanged}:{client:SupabaseClient;userId:string;isAdmin?:boolean;onChanged?:()=>void}){
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
-  const [message,setMessage]=useState("");const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);const [search,setSearch]=useState("");
+  const [message,setMessage]=useState("");const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);
   const [requestStatus,setRequestStatus]=useState("pending");
   const [loadError,setLoadError]=useState("");
   useEffect(()=>{let active=true;const load=()=>{void client.rpc("get_staff_workspace").then(({data,error})=>{if(!active)return;if(error){setWorkspace(null);setLoadError(`Requests could not be loaded: ${error.message}`);}else{setWorkspace(data as Workspace);setLoadError("");}});};load();window.addEventListener("focus",load);return()=>{active=false;window.removeEventListener("focus",load);};},[client,revision]);
   async function review(event:FormEvent<HTMLFormElement>,requestId:string){event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
     const result=await client.rpc("review_property_access_request",{p_request_id:requestId,p_decision:data.get("decision"),p_note:String(data.get("review_note")).trim()});
     setBusy(false);setMessage(result.error?result.error.message:"Request reviewed. Property access has been updated.");if(!result.error){setRevision((v)=>v+1);onChanged?.();}
-  }
-  async function occupancy(event:FormEvent<HTMLFormElement>,propertyId:string){event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
-    const result=await client.rpc("update_property_occupancy",{p_property_id:propertyId,p_status:data.get("status"),p_note:String(data.get("note"))});
-    setBusy(false);setMessage(result.error?result.error.message:"Occupancy saved. Changes are recorded in property history.");if(!result.error){setRevision((v)=>v+1);onChanged?.();}
   }
   const visibleRequests=workspace?.requests.filter(request=>requestStatus==="all"||request.status===requestStatus)??[];
   return <>
@@ -40,16 +37,6 @@ export function StaffWorkspace({client,userId,isAdmin=false,onChanged}:{client:S
         </form>:request.user_id===userId&&<p>Another authorized reviewer must handle your request.</p>}
       </article>)}
     </WorkspaceSection>
-    <WorkspaceSection title="Property management" description="Search lots, contacts, and occupancy"><p>Search all HOA lots. Imported household contacts remain visibly marked historical and unverified.</p>
-      <label className="portal-search">Search lot, address, or contact<input type="search" value={search} onChange={(event)=>setSearch(event.target.value)}/></label>
-      {workspace&&<p>{workspace.properties.length} HOA properties</p>}
-      <div className="history-table-wrap"><table><thead><tr><th>Lot / property</th><th>Verified contacts</th><th>Historical contacts</th><th>Occupancy</th></tr></thead><tbody>
-        {workspace?.properties.filter((property)=>[property.lot_number,property.street_address,...property.verified_contacts.map((c)=>c.display_name),...property.historical_contacts.map((c)=>c.display_name)].join(" ").toLowerCase().includes(search.toLowerCase())).map((property)=><tr key={property.id}>
-          <td>Lot {property.lot_number}<br/>{property.street_address}</td><td>{property.verified_contacts.length?property.verified_contacts.map((contact,i)=><p key={i}>{contact.display_name} ({contact.relationship.replaceAll("_"," ")})</p>):"None approved"}</td>
-          <td>{property.historical_contacts.map((contact,i)=><p key={i}>{contact.display_name}<br/><small>Historical / unverified</small></p>)}</td>
-          <td><form className="portal-form portal-occupancy" key={property.occupancy_status} onSubmit={(event)=>occupancy(event,property.id)}><label>Status<select name="status" defaultValue={property.occupancy_status}><option value="unknown">Unknown</option><option value="owner_occupied">Owner occupied</option><option value="rental">Rental</option><option value="vacant">Vacant</option></select></label><label>Update note<input name="note" maxLength={1000}/></label><button disabled={busy}>Save occupancy</button></form></td>
-        </tr>)}
-      </tbody></table></div>
-    </WorkspaceSection>
+    <p className="portal-notice">Lot records, historical contacts, occupancy and email notices are now on <Link href="/admin/properties/">Property management</Link>. Financial records are on <Link href="/admin/treasury/">Treasury</Link>.</p>
   </>;
 }

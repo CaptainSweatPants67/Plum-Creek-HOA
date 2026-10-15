@@ -21,7 +21,7 @@ System administrators with MFA use **Member accounts & workspace access** to sea
 | Checkbox | Grants |
 | --- | --- |
 | Officer & Director tools | Service contacts, contracts, minutes, announcements and calendar management |
-| HOA administration | Membership/property/rental reviews, submitted household records, signup-code viewing and calendar management |
+| HOA administration | Membership/property/rental reviews, historical contact maintenance, Treasury, homeowner notices, submitted household records, signup-code viewing and calendar management |
 
 These are private workspace permissions, separate from public Board/Officer appointments and ownership approval. Current appointments provide default access unless explicitly overridden. Explicit checkbox settings persist until changed; expiring a public appointment does not revoke a separate explicit grant. Unchecking a workspace revokes it even if an appointment remains published. System administrators retain both workspaces and cannot be locked out by these controls. MFA is required to exercise either workspace; permissions are rechecked from the database on every protected operation. Menus refresh on focus and authentication changes. Permission changes are audited.
 
