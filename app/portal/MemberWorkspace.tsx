@@ -43,7 +43,7 @@ export function MemberWorkspace({ client, userId, email }: { client: SupabaseCli
     event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);
     const fields=contactFields(data);
     const result=await client.rpc("save_member_profile",{p_details:fields,p_notice_consent:data.has("notice_consent")});
-    setBusy(false);setMessage(result.error?result.error.message:"Current contact information saved. Property ownership still requires separate approval.");
+    setBusy(false);setMessage(result.error?result.error.message:"Current contact information saved.");
     if(!result.error)setRevision((v)=>v+1);
   }
   async function submitRequest(event:FormEvent<HTMLFormElement>){
