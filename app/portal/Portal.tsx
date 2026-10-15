@@ -21,11 +21,13 @@ import { MemberApplication } from "./MemberApplication";
 import { AccountAccessManager } from "./AccountAccessManager";
 import { PropertyManagement } from "./PropertyManagement";
 import { TreasuryWorkspace } from "./TreasuryWorkspace";
+import { CommitteeManager } from "./CommitteeManager";
+import { CommitteeDirectory } from "../components/CommitteeDirectory";
 import type { MemberApplicationStatus } from "../../lib/member-application";
 
 type Flags = { is_admin: boolean; is_director: boolean; is_officer: boolean; has_mfa: boolean; can_view_signup_code: boolean; can_manage_leadership: boolean; can_access_admin?: boolean; can_access_tools?: boolean; can_review_members?: boolean };
 
-export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "members" | "admin" | "leadership" | "documents" | "properties" | "treasury" }) {
+export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "members" | "admin" | "leadership" | "documents" | "properties" | "treasury" | "committees" | "committee-admin" }) {
   const [client, setClient] = useState<SupabaseClient | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -190,9 +192,9 @@ export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "
     </div> : <>
       <div className="portal-panel portal-account"><div className="portal-heading"><div><span className="signed-in-label">● Signed in</span><p>{session.user.email}</p></div><button onClick={async () => { await client.auth.signOut(); setMessage(""); }}>Sign out</button></div>
         {flags && <div className="portal-badges">{flags.is_director && <span>Director</span>}{flags.is_officer && <span>Officer</span>}{flags.is_admin && <span>System administrator</span>}</div>}
-        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">{application?.phase==="approved"?"My information & properties":"My membership application"}</Link>{memberMenu&&<Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>}{administration && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{tools && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
+        <nav className="portal-links" aria-label="Member workspace"><Link aria-current={view === "members" ? "page" : undefined} href="/members/">{application?.phase==="approved"?"My information & properties":"My membership application"}</Link>{memberMenu&&<Link aria-current={view === "documents" ? "page" : undefined} href="/member-documents/">Member library</Link>}{memberMenu&&<Link aria-current={view === "committees" ? "page" : undefined} href="/member-committees/">Committees</Link>}{administration && <Link aria-current={view === "admin" ? "page" : undefined} href="/admin/">HOA administration</Link>}{tools && <Link aria-current={view === "leadership" ? "page" : undefined} href="/leadership/">Officer &amp; Director tools</Link>}<Link href="/portal/reset-password/">Password</Link></nav>
       </div>
-      {administration&&["admin","properties","treasury"].includes(view)&&<nav className="admin-task-tabs" aria-label="Administration pages"><Link href="/admin/" aria-current={view==="admin"?"page":undefined}>Membership &amp; administration</Link><Link href="/admin/properties/" aria-current={view==="properties"?"page":undefined}>Property management</Link><Link href="/admin/treasury/" aria-current={view==="treasury"?"page":undefined}>Treasury</Link></nav>}
+      {administration&&["admin","properties","treasury","committee-admin"].includes(view)&&<nav className="admin-task-tabs" aria-label="Administration pages"><Link href="/admin/" aria-current={view==="admin"?"page":undefined}>Membership &amp; administration</Link><Link href="/admin/properties/" aria-current={view==="properties"?"page":undefined}>Property management</Link><Link href="/admin/treasury/" aria-current={view==="treasury"?"page":undefined}>Treasury</Link><Link href="/admin/committees/" aria-current={view==="committee-admin"?"page":undefined}>Committees &amp; members</Link></nav>}
       {!showApplication&&(application||leadership)&&<SectionControls />}
       {!application&&!leadership&&(applicationError?<div className="portal-panel"><p role="status">{applicationError}</p><button onClick={refreshMembership}>Retry application status</button></div>:<p role="status">Checking application status…</p>)}
       {application&&applicationError&&<p className="portal-notice" role="status">Approval status could not be refreshed: {applicationError}</p>}
@@ -202,12 +204,15 @@ export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "
         {factorId && <form className="portal-form" onSubmit={verifyMfa}><label>Authenticator code<input name="mfa_code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label><button disabled={busy}>Verify MFA</button></form>}
       </div>}
       {showApplication&&<MemberApplication key={`application-${session.user.id}`} client={client} email={session.user.email??""} status={application} onChanged={refreshMembership} isAdmin={Boolean(flags?.is_admin)}/>}
-      {view === "members" && application?.phase==="approved" && <MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} />}
+      {view === "members" && application?.phase==="approved" && <div className="member-home-cards" aria-label="Member resources"><a href="#my-contact-information"><span>01 / Your household</span><h2>Keep in touch</h2><p>Review your contact details, property and household information below.</p></a><Link href="/member-documents/"><span>02 / Community records</span><h2>Your member library</h2><p>Find minutes, announcements, bylaws and leadership history.</p></Link><Link href="/member-committees/"><span>03 / Get involved</span><h2>Neighbors at work</h2><p>Explore our committees and current member appointments.</p></Link></div>}
+      {view === "members" && application?.phase==="approved" && <div id="my-contact-information"><MemberWorkspace key={`members-${session.user.id}`} client={client} userId={session.user.id} email={session.user.email ?? ""} /></div>}
+      {view === "committees" && memberMenu && <MemberAccessGate key={`committees-access-${session.user.id}`} client={client}><div className="member-directory"><CommitteeDirectory members client={client} /></div></MemberAccessGate>}
       {view === "documents" && memberMenu && <MemberAccessGate key={`access-${session.user.id}`} client={client}><MemberResources key={`resources-${session.user.id}`} client={client} /><MemberLibrary key={`library-${session.user.id}`} client={client} /></MemberAccessGate>}
       {view === "leadership" && flags?.has_mfa && tools && <LeadershipRecords key={`records-${session.user.id}`} client={client} />}
       {view === "leadership" && flags && !tools && memberMenu && <div className="portal-panel"><h2>Workspace access required</h2><p>A system administrator can grant Officer &amp; Director tools access to your registered account.</p></div>}
       {view === "admin" && flags?.has_mfa && administration && <StaffWorkspace key={`staff-${session.user.id}`} client={client} userId={session.user.id} isAdmin={flags.is_admin} onChanged={() => {setRentalRevision(v => v + 1);refreshMembership();}} />}
       {view === "properties" && flags?.has_mfa && administration && <PropertyManagement client={client} userId={session.user.id} isAdmin={flags.is_admin} onChanged={refreshMembership}/>}
+      {view === "committee-admin" && flags?.has_mfa && administration && <CommitteeManager client={client}/>}
       {view === "treasury" && flags?.has_mfa && administration && <TreasuryWorkspace client={client}/>}
       {view === "admin" && flags?.can_manage_leadership && <AccountAccessManager client={client} onChanged={refreshMembership}/>}
       {flags?.can_view_signup_code && view === "admin" && <SignupPasscode key={`signup-code-${session.user.id}`} client={client} canReplace={flags.can_manage_leadership} />}
@@ -215,7 +220,7 @@ export function Portal({ view: requestedView = "portal" }: { view?: "portal" | "
       {view === "admin" && flags?.has_mfa && administration && <PropertyHouseholds key={`households-staff-${session.user.id}`} client={client} staff revision={rentalRevision} />}
       {view === "admin" && flags?.has_mfa && administration && <CalendarManager key={`calendar-staff-${session.user.id}`} client={client} defaultOpen={false} />}
       {view === "admin" && flags?.can_manage_leadership && <LeadershipManager key={`leadership-${session.user.id}`} client={client} />}
-      {["admin","properties","treasury"].includes(view) && flags && !administration && memberMenu && <div className="portal-panel"><h2>Workspace access required</h2><p>A system administrator can grant HOA administration access to your registered account.</p></div>}
+      {["admin","properties","treasury","committee-admin"].includes(view) && flags && !administration && memberMenu && <div className="portal-panel"><h2>Workspace access required</h2><p>A system administrator can grant HOA administration access to your registered account.</p></div>}
     </>}
   </section>;
 }

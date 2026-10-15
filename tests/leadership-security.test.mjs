@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
+import { committeeTests } from "./committee-fixtures.mjs";
 import { managementTests } from "./management-fixtures.mjs";
 
 test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership", async (t) => {
@@ -57,6 +58,7 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
   await db.exec(await migration('passcode_ticket_cleanup_safeupdate'));
   await db.exec(await migration('member_onboarding_and_workspace_access'));
   await db.exec(await migration('property_management_and_treasury'));
+  await db.exec(await migration('committee_management_and_visibility'));
   async function asRole(role, uid, aal, fn, claims = {}) {
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(uid ? { sub: uid, aal, ...claims, user_metadata: { role: "admin", is_director: true } } : {})]);
     await db.exec(`set role ${role}`);
@@ -863,5 +865,6 @@ test("real PostgreSQL permissions, signup gate, bootstrap and dated leadership",
     await asRole('authenticated',uid,'aal1',async()=>{assert.equal((await application()).phase,'approved');assert.equal((await scalar('select public.get_member_access()')).allowed,false);await db.query('select public.get_member_profile()');await db.query('select public.get_rental_workspace()');});
   });
 
+  await committeeTests({t,db,asRole,scalar,admin,applicant,staff});
   await managementTests({t,db,asRole,scalar,admin,homeowner,staff});
 });

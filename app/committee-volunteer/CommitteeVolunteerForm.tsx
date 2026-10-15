@@ -1,6 +1,8 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
+import type { DirectoryCommittee } from "../../lib/committees";
 import { EmailCopyButton } from "../components/EmailActions";
 import {
   desktopEmailUrl,
@@ -13,6 +15,13 @@ function value(formData: FormData, name: string) {
 }
 
 export function CommitteeVolunteerForm() {
+  const [committees, setCommittees] = useState<DirectoryCommittee[]>([]);
+  useEffect(() => {
+    let active = true;
+    const client = getSupabaseBrowserClient();
+    if (client) void client.rpc("get_public_committees").then(({ data, error }) => { if (active && !error && Array.isArray(data)) setCommittees(data as DirectoryCommittee[]); });
+    return () => { active = false; };
+  }, []);
   function prepareEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -101,9 +110,7 @@ export function CommitteeVolunteerForm() {
             <option value="" disabled>
               Select a committee
             </option>
-            <option>Covenants Review Committee</option>
-            <option>Beautification Committee</option>
-            <option>Welcoming Committee</option>
+            {committees.filter(c => !c.board_membership).map(c => <option key={c.id}>{c.name}</option>)}
             <option>Open to any committee</option>
             <option>Another committee or project</option>
           </select>

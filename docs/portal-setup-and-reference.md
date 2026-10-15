@@ -142,3 +142,5 @@ node scripts/check-supabase-interface.mjs
 ```
 
 The live smoke script reads only and prints no keys, passcodes or private records.
+
+See [committee management and member pages](committees-and-member-pages.md) for committee appointments, public/member-only name visibility and the member-page design update.

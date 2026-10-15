@@ -130,15 +130,10 @@ test("exports the Plum Creek community pages", async () => {
     assert.doesNotMatch(events, /Friday, October 9, 2026/);
   }
 
-  assert.match(committees, /Architectural Control Committee/);
-  assert.match(committees, /Covenants Review Committee/);
-  assert.match(committees, /Beautification Committee/);
-  assert.match(committees, /Welcoming Committee/);
+  assert.match(committees, /Loading committee directory/);
   assert.match(committees, /appointed/i);
   assert.match(committees, /renewed each year/i);
-  assert.match(committees, /Michael Bruna/);
-  assert.match(committees, /Andrew Benedict-Nelson/);
-  assert.match(committees, /architectural-request/);
+  assert.doesNotMatch(committees, /Andrew Benedict-Nelson|Harvey Sime/);
   assert.match(committees, /committee-volunteer/);
 
   assert.match(architecturalRequest, /Architectural approval request/);

@@ -11,6 +11,13 @@ assert.ok(url && key?.startsWith("sb_publishable_"));
 const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 const roster=await client.rpc("get_public_leadership_roster");
 assert.ifError(roster.error);
+const committees=await client.rpc('get_public_committees');
+assert.ifError(committees.error);
+assert.ok(Array.isArray(committees.data));
+assert.ok(committees.data.every(c=>c.show_public && c.members.every(m=>m.show_public && !('notes' in m) && !('updated_by' in m))));
+for(const name of ['get_member_committees','get_committee_workspace']) {
+  assert.ok((await client.rpc(name)).error,`Anonymous access must be denied: ${name}`);
+}
 assert.equal(roster.data.board.length,5);
 assert.ok(roster.data.board.every(row=>row.kind !== 'historical'));
 assert.ok((await client.rpc('get_member_leadership_history')).error);

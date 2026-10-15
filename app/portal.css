@@ -144,4 +144,58 @@
 .notice-history summary,.recipient-preview summary { cursor:pointer;font-weight:650;font-size:13px; }
 .notice-body { white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;background:#f4f7fa;padding:12px; }
 .recipient-preview ul { max-height:240px;overflow:auto;font-size:13px; }
+.committee-selector { display:grid;gap:6px;max-width:650px;font-weight:600; }
+.committee-fields { display:grid;gap:12px;border:0;padding:0;margin:0;min-width:0; }
+.portal-app .portal-form .portal-check { display:flex;align-items:flex-start;gap:9px; }
+.portal-app .portal-form .portal-check input { width:18px;min-height:18px;margin:2px 0;flex-shrink:0;accent-color:var(--forest); }
+.committee-admin-roster { display:grid;gap:8px;margin-top:14px; }
+.committee-admin-roster article { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border:1px solid var(--line);border-radius:5px;padding:12px;overflow-wrap:anywhere; }
+.committee-member-editor { padding:16px!important;border-bottom:1px solid var(--line);background:#f5f8fb;margin:12px 0; }
+.committee-visibility { display:inline-block;background:var(--sand);color:var(--forest-deep);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;margin-bottom:8px; }
+.committee-directory-status button { background:var(--forest);border:1px solid var(--forest);color:white;padding:10px 16px;border-radius:4px;cursor:pointer; }
+
+/* Member pages share the public site's palette, with compact private navigation. */
+.member-site-shell { --ink:#1f2b21;--forest:#314d38;--forest-deep:#1d3425;--sand:#e9dcc7;--cream:#f8f3e9;--paper:#fffdf8;--line:rgba(31,43,33,.17);--terracotta:#a9583b;background:#f8f5ee; }
+.member-site-shell .portal-topbar { background:var(--forest-deep); }
+.member-site-shell .portal-brand { font-family:Georgia,'Times New Roman',serif;font-size:20px; }
+.member-site-shell .portal-brand span { color:#d9e2d0;font-family:Arial,Helvetica,sans-serif;font-size:12px; }
+.member-site-shell .portal-bottom { color:#596550; }
+.member-site-shell .section-kicker { color:#526646;letter-spacing:.13em; }
+.member-site-shell h1,.member-site-shell h2,.member-site-shell h3 { font-family:Georgia,'Times New Roman',serif; }
+.member-site-shell .portal-app { max-width:1240px; }
+.member-page-hero { display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--cream);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px; }
+.member-page-hero > div { padding:24px 28px;align-self:center; }
+.member-page-hero h1 { font-size:clamp(26px,3vw,38px);line-height:1.13;letter-spacing:-.025em;margin:6px 0 12px;max-width:560px; }
+.member-page-hero p { color:#51614b;max-width:530px; }
+.member-page-hero > img { width:100%;height:100%;max-height:244px;min-height:215px;object-fit:cover; }
+.member-private-label { display:inline-block;color:var(--forest);font-size:11px;font-weight:700;border:1px solid #b7c1ac;border-radius:20px;padding:3px 10px;margin-top:5px; }
+.member-site-shell .portal-app .portal-panel { background:var(--paper);border-radius:8px; }
+.member-site-shell .portal-app .portal-links a[aria-current="page"],.member-site-shell .portal-app .portal-tabs button[aria-pressed="true"] { background:var(--forest);color:white; }
+.member-site-shell .portal-app .portal-links a:hover { background:#e6ebde;color:var(--forest-deep); }
+.member-site-shell .portal-app .section-controls button,.member-site-shell .portal-app .portal-tabs button { color:var(--forest); }
+.member-site-shell .workspace-section > summary > span,.member-site-shell .section-controls span { color:#596550; }
+.member-site-shell .portal-app th { background:#e9edde; }
+.member-site-shell .portal-app tbody tr:nth-child(even) { background:#f5f5ec; }
+.member-site-shell .portal-app input,.member-site-shell .portal-app textarea,.member-site-shell .portal-app select { background:#fffefb;accent-color:var(--forest); }
+.member-home-cards { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0; }
+.member-home-cards > a { display:block;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-top:3px solid #8a9a78;border-radius:6px;padding:18px;text-decoration:none; }
+.member-home-cards > a:hover { background:#f0f1e5;border-color:#8a9a78; }
+.member-home-cards span { text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:700;color:#596550; }
+.member-home-cards h2 { margin:8px 0!important;font-size:21px!important; }
+.member-home-cards p { color:#51614b;font-size:13px; }
+.member-directory { margin-top:18px; }
+.member-site-shell .committee-grid { gap:16px; }
+.member-site-shell .committee-card { border-radius:8px;padding:22px;background:var(--paper);min-width:0; }
+.member-site-shell .committee-card h2 { font-size:25px; }
+.member-site-shell .committee-card p,.member-site-shell .committee-card li { font-size:14px; }
+.member-site-shell .committee-number { font-size:30px; }
+@media(max-width:700px) {
+  .member-page-hero { grid-template-columns:minmax(0,1fr); }
+  .member-page-hero > div { padding:20px; }
+  .member-page-hero > img { min-height:0;height:125px;max-height:125px;object-position:center 55%; }
+  .member-home-cards { grid-template-columns:1fr;gap:8px; }
+  .member-home-cards > a { padding:14px 16px; }
+  .member-home-cards h2 { font-size:19px!important; }
+  .member-site-shell .committee-grid { grid-template-columns:1fr; }
+}
 @media(max-width:600px) { .management-details { grid-template-columns:1fr;gap:4px; }.management-details dd { margin-bottom:8px; }.management-toolbar label { width:100%; }.treasury-totals { grid-template-columns:repeat(2,minmax(0,1fr)); } }
