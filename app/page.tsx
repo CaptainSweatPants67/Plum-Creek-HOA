@@ -67,13 +67,15 @@ export default function Home() {
   return (
     <main>
       <section className="home-banner" id="top">
+        <div className="home-banner-photo"><img className="home-banner-image" src="/og.png" alt="Plum Creek Homeowners Association lettering beside the neighborhood's stone entrance at sunset" fetchPriority="high" width={1731} height={908} /></div>
         <div className="home-banner-copy">
-          <p className="section-kicker">Our neighborhood · Gardner, Kansas</p>
-          <h1>Plum Creek HOA</h1>
-          <p>Neighborhood information, HOA resources, and your homeowner account.</p>
+          <div className="home-banner-intro">
+            <h1 className="home-banner-title">Plum Creek HOA</h1>
+            <p className="section-kicker">Our neighborhood · Gardner, Kansas</p>
+            <p>Neighborhood information, HOA resources, and your homeowner account.</p>
+          </div>
           <div className="hero-actions"><Link className="primary-button" href="/portal/">Homeowner login <span aria-hidden="true">→</span></Link><Link className="outline-button" href="/architectural-request/">Architectural approval</Link></div>
         </div>
-        <div className="home-banner-photo"><img className="home-banner-image" src="/plum-creek-entrance.jpg" alt="The Plum Creek neighborhood entrance" fetchPriority="high" width={960} height={720} /></div>
       </section>
 
       <section className="home-destinations">
